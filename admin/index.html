@@ -12,6 +12,7 @@
   --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.24);
   --cyan:#3fe0d0; --cyan-dim:rgba(63,224,208,.12);
   --purple:#a78bfa;
+  --emerald:#0a3b2e; --emerald-l:#1f8f6b; --emerald-dim:rgba(31,143,107,.16); --emerald-line:rgba(31,143,107,.32);
   --platinum:#f3f2ee; --mist:#a3abbd; --faint:#5c6577;
   --green:#34d399; --greenbg:rgba(52,211,153,.12);
   --red:#f87171; --redbg:rgba(248,113,113,.12);
@@ -75,7 +76,7 @@ button{cursor:pointer;}
 .topbar{display:none;background:var(--obsidian);color:#fff;padding:14px 18px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--gold-line);}
 .topbar select{background:var(--panel2);color:#fff;border:1px solid var(--gold-line);border-radius:var(--radius-sm);padding:8px 10px;min-height:44px;}
 
-main.content{flex:1;padding:34px 38px;max-width:100%;overflow-x:hidden;background:radial-gradient(1200px 500px at 100% -10%, rgba(201,168,76,.05), transparent 60%);}
+main.content{flex:1;padding:34px 38px;max-width:100%;overflow-x:hidden;background:radial-gradient(1200px 500px at 100% -10%, rgba(201,168,76,.05), transparent 60%),radial-gradient(900px 500px at -10% 100%, var(--emerald-dim), transparent 55%);}
 @media (max-width:900px){
   .sidebar{display:none;}
   .topbar{display:flex;}
@@ -129,7 +130,7 @@ tr.rowhover:hover{background:var(--gold-dim);}
 .b-approved{background:var(--greenbg);color:var(--green);}
 .b-progress{background:var(--bluebg);color:var(--blue);}
 .b-declined{background:var(--redbg);color:var(--red);}
-.b-completed{background:rgba(255,255,255,.06);color:var(--mist);}
+.b-completed{background:var(--emerald-dim);color:var(--emerald-l);}
 .b-trash{background:var(--redbg);color:var(--red);}
 .b-high{background:var(--redbg);color:var(--red);}
 .b-medium{background:var(--amberbg);color:var(--amber);}
@@ -408,7 +409,7 @@ gsap.fromTo('#loginCard', {y:24}, {y:0, duration:1, ease:'power3.out', delay:.2}
    CORE DATA / STATE
    ============================================================ */
 const STORE_KEY = 'pbis-requests';
-const WEB_APP_URL = ''; // paste your deployed Google Apps Script Web App URL here to activate live sync across devices
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywVAPTqjjKGDSEusV6-mt15nPwxivlC-bfRtK4qh1HafJFtsbg0Y3VkVKoXK1q3n_FrQ/exec'; // live: PBIS Artmedia Sheets backend
 
 const STAFF = [
   {name:'Simon'},{name:'Top'},{name:'Nuza'},{name:'Lane'},{name:'Mooping'},
@@ -1093,6 +1094,34 @@ function doGet(e){
       try{ requests.push(JSON.parse(raw)); }catch(err){ /* skip malformed row */ }
     }
     return jsonOut({requests});
+  }
+  if(action === 'track'){
+    // Public lookup used by the portal's "Track Request" section.
+    // Requires BOTH the exact ID and the email it was submitted with, so a stray
+    // ID guess can't be used to browse other people's requests.
+    const id = (e.parameter.id || '').trim().toUpperCase();
+    const email = (e.parameter.email || '').trim().toLowerCase();
+    if(!id || !email) return jsonOut({found:false});
+    const sheet = getSheet(CONFIG.SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const jsonIdx = headers.indexOf('Payload JSON');
+    for(let i=1; i<data.length; i++){
+      const raw = data[i][jsonIdx];
+      if(!raw) continue;
+      let payload;
+      try{ payload = JSON.parse(raw); }catch(err){ continue; }
+      if((payload.id||'').toUpperCase() === id && (payload.email||'').toLowerCase().trim() === email){
+        // Return only what the public tracker needs — no phone, no internal assignment name.
+        return jsonOut({found:true, request:{
+          id: payload.id, title: payload.title, cat: payload.cat, type: payload.type,
+          priority: payload.priority, status: payload.status, deadline: payload.deadline,
+          evdate: payload.evdate, date: payload.date, ts: payload.ts,
+          declineReason: payload.declineReason || null, trashed: !!payload.trashed
+        }});
+      }
+    }
+    return jsonOut({found:false});
   }
   return jsonOut({error:'unknown action'});
 }
