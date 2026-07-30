@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
 <style>
 :root{
+  color-scheme: dark;
   --void:#040509; --obsidian:#0a0c14; --panel:#0e1119; --panel2:#11151f;
   --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.26);
   --cyan:#3fe0d0; --cyan-dim:rgba(63,224,208,.12);
@@ -25,12 +26,16 @@
 *{box-sizing:border-box;}
 .hidden{display:none!important;}
 html{scroll-behavior:smooth;}
-body{margin:0;font-family:var(--sans);background:var(--void);color:var(--platinum);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;cursor:none;}
+body{margin:0;font-family:var(--sans);background:var(--void) radial-gradient(1100px 700px at -10% 15%,var(--emerald-dim),transparent 55%),radial-gradient(900px 600px at 110% 85%,var(--emerald-dim),transparent 55%);background-attachment:fixed;color:var(--platinum);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;cursor:none;}
 h1,h2,h3,.serif{font-family:var(--serif);}
 a{color:inherit;text-decoration:none;}
 button{font-family:inherit;cursor:none;}
 img,svg{display:block;}
 ::selection{background:var(--gold);color:#0a0c14;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--void);}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--gold-line),var(--emerald-line));border-radius:99px;}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--gold),var(--emerald-l));}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
 @media (hover:none){body,button{cursor:auto;}#cursor{display:none;}}
 
@@ -39,20 +44,11 @@ img,svg{display:block;}
 #cursorDot{position:fixed;top:0;left:0;width:4px;height:4px;background:var(--gold-l);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
 
 #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.7;}
-#slabCanvas{position:fixed;inset:0;z-index:50;pointer-events:none;}
-#impactFlash{position:fixed;inset:0;z-index:51;pointer-events:none;background:#fff;opacity:0;mix-blend-mode:screen;}
-.shake{animation:shakeKey .5s cubic-bezier(.36,.07,.19,.97) both;}
-@keyframes shakeKey{
-  10%,90%{transform:translate3d(-1px,0,0);}
-  20%,80%{transform:translate3d(2px,-2px,0);}
-  30%,50%,70%{transform:translate3d(-4px,3px,0);}
-  40%,60%{transform:translate3d(4px,-3px,0);}
-}
 .wrap{perspective:1600px;}
 .panel{transform-style:preserve-3d;will-change:transform,opacity,filter;}
 .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,5,9,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--gold-line);}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(4,5,9,.55);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid transparent;border-image:linear-gradient(90deg,var(--emerald-l),var(--gold-line) 40%,var(--gold-line) 60%,var(--emerald-l)) 1;}
 .nav-inner{max-width:1320px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .pbis-logo{display:inline-flex;align-items:center;gap:13px;}
 .pbis-logo .wordmark{font-family:var(--serif);font-weight:700;letter-spacing:.03em;color:var(--gold-l);font-size:23px;}
@@ -127,6 +123,10 @@ img,svg{display:block;}
 .svc-card:hover::before{opacity:1;}
 .svc-card .num{font-family:var(--serif);font-size:15px;color:var(--gold);opacity:.6;margin-bottom:18px;}
 .svc-card i{font-size:32px;color:var(--gold-l);display:block;margin-bottom:16px;}
+.svc-card:nth-child(even) i{color:var(--emerald-l);}
+.svc-card:nth-child(even) .num{color:var(--emerald-l);}
+.svc-card:nth-child(even):hover{border-color:var(--emerald-l);}
+.svc-card:nth-child(even)::before{background:radial-gradient(circle at 50% 0%,var(--emerald-dim),transparent 60%);}
 .svc-card h3{font-size:18px;font-weight:600;margin:0 0 10px;color:var(--platinum);}
 .svc-card p{font-size:13px;color:var(--faint);line-height:1.6;margin:0;}
 
@@ -205,7 +205,9 @@ img,svg{display:block;}
 .field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:8px;color:var(--mist);letter-spacing:.03em;}
 .field label .req{color:var(--gold-l);}
 .field input,.field select,.field textarea{width:100%;min-height:48px;padding:11px 16px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);font-family:inherit;font-size:14px;background:rgba(255,255,255,.03);color:var(--platinum);transition:border-color .25s var(--ease),box-shadow .25s var(--ease),background .25s var(--ease);}
-.field select{cursor:none;}
+.field select{cursor:none;color-scheme:dark;}
+.field select option{background:#11151f;color:#f3f2ee;padding:10px;}
+.field select option:checked,.field select option:hover{background:var(--gold-dim);color:var(--gold-l);}
 .field textarea{min-height:100px;resize:vertical;}
 .field input::placeholder,.field textarea::placeholder{color:var(--faint);}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-dim);background:rgba(201,168,76,.04);}
@@ -243,7 +245,7 @@ img,svg{display:block;}
 .banner.show{display:flex;}
 .banner i{font-size:26px;color:var(--green);}
 
-.footer{text-align:center;padding:60px 24px 70px;color:var(--faint);font-size:13px;position:relative;z-index:2;}
+.footer{text-align:center;padding:60px 24px 70px;color:var(--faint);font-size:13px;position:relative;z-index:2;border-top:1px solid transparent;border-image:linear-gradient(90deg,transparent,var(--emerald-l),var(--gold-line),var(--emerald-l),transparent) 1;}
 .footer .flinks{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-bottom:16px;}
 .footer .flinks a{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--mist);transition:color .25s var(--ease);cursor:none;}
 .footer .flinks a:hover{color:var(--gold-l);}
@@ -253,8 +255,6 @@ img,svg{display:block;}
 
 <div id="cursor"></div><div id="cursorDot"></div>
 <canvas id="bgCanvas"></canvas>
-<canvas id="slabCanvas"></canvas>
-<div id="impactFlash"></div>
 <div class="grain"></div>
 
 <nav class="nav">
@@ -513,13 +513,18 @@ if(!REDUCED){
   const count = 500;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(count*3);
+  const col = new Float32Array(count*3);
+  const gold = new THREE.Color(0xc9a84c), emerald = new THREE.Color(0x1f8f6b);
   for(let i=0;i<count;i++){
     pos[i*3] = (Math.random()-.5)*60;
     pos[i*3+1] = (Math.random()-.5)*60;
     pos[i*3+2] = (Math.random()-.5)*40 - 5;
+    const c = Math.random() < 0.78 ? gold : emerald;
+    col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-  const mat = new THREE.PointsMaterial({color:0xc9a84c, size:.09, transparent:true, opacity:.55});
+  geo.setAttribute('color', new THREE.BufferAttribute(col,3));
+  const mat = new THREE.PointsMaterial({size:.09, transparent:true, opacity:.55, vertexColors:true});
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
@@ -555,7 +560,7 @@ if(!REDUCED){
   camera.position.set(0,0,9);
 
   const key = new THREE.PointLight(0xf0d78c, 3, 50); key.position.set(6,6,8); scene.add(key);
-  const fill = new THREE.PointLight(0x3fe0d0, 1.2, 50); fill.position.set(-6,-3,4); scene.add(fill);
+  const fill = new THREE.PointLight(0x1f8f6b, 1.6, 50); fill.position.set(-6,-3,4); scene.add(fill);
   scene.add(new THREE.AmbientLight(0x222233, 1.2));
 
   const group = new THREE.Group(); scene.add(group);
@@ -671,110 +676,6 @@ if(!REDUCED){
     card.addEventListener('mouseleave', ()=>gsap.to(card,{rotateY:0,rotateX:0,duration:.6,ease:'power3.out'}));
   });
 }
-
-/* ============================================================
-   THE DROP — concrete-slab impact transition, hero -> content
-   ============================================================ */
-(function slabImpact(){
-  const canvas = document.getElementById('slabCanvas');
-  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(innerWidth, innerHeight);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, .1, 100);
-  camera.position.set(0,0,10);
-  scene.add(new THREE.AmbientLight(0x554422, 1.4));
-  const key = new THREE.PointLight(0xf0d78c, 4, 60); key.position.set(4,10,10); scene.add(key);
-
-  const slabGeo = new THREE.BoxGeometry(30,7,2, 20,4,1);
-  const posAttr = slabGeo.attributes.position;
-  for(let i=0;i<posAttr.count;i++){
-    posAttr.setXYZ(i, posAttr.getX(i)+(Math.random()-.5)*.12, posAttr.getY(i)+(Math.random()-.5)*.12, posAttr.getZ(i)+(Math.random()-.5)*.12);
-  }
-  slabGeo.computeVertexNormals();
-  const slabMat = new THREE.MeshStandardMaterial({color:0x0e1119, metalness:.4, roughness:.85, flatShading:true});
-  const slab = new THREE.Mesh(slabGeo, slabMat);
-  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(30.05,7.05,2.05));
-  const slabEdge = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({color:0xc9a84c, transparent:true, opacity:.5}));
-  slab.add(slabEdge);
-  slab.position.set(0, 26, -2);
-  slab.rotation.set(0,0,.02);
-  scene.add(slab);
-
-  // dust/debris burst particles, hidden until impact
-  const debrisCount = 90;
-  const debrisGeo = new THREE.BufferGeometry();
-  const debrisPos = new Float32Array(debrisCount*3);
-  const debrisVel = [];
-  for(let i=0;i<debrisCount;i++){
-    debrisPos[i*3]=0; debrisPos[i*3+1]=-1; debrisPos[i*3+2]=0;
-    debrisVel.push({x:(Math.random()-.5)*0.35, y:Math.random()*0.22+0.05, z:(Math.random()-.5)*0.25});
-  }
-  debrisGeo.setAttribute('position', new THREE.BufferAttribute(debrisPos,3));
-  const debris = new THREE.Points(debrisGeo, new THREE.PointsMaterial({color:0xc9a84c, size:.12, transparent:true, opacity:0}));
-  scene.add(debris);
-
-  let impactDone = false;
-  function runImpact(){
-    if(impactDone || REDUCED) { if(REDUCED){ scene.remove(slab); } return; }
-    impactDone = true;
-    const tl = gsap.timeline();
-    tl.to(slab.position, {y:0, duration:.62, ease:'power4.in'})
-      .to(slab.rotation, {z:-.008, duration:.62, ease:'power4.in'}, '<')
-      .call(()=>{
-        document.body.classList.add('shake');
-        setTimeout(()=>document.body.classList.remove('shake'), 500);
-        gsap.timeline()
-          .to('#impactFlash', {opacity:.85, duration:.05})
-          .to('#impactFlash', {opacity:0, duration:.55, ease:'power2.out'});
-        debrisMat.opacity = .9;
-        for(let i=0;i<debrisCount;i++){ debrisPos[i*3+1] = 0; }
-        debrisGeo.attributes.position.needsUpdate = true;
-        debrisClock = 0; debrisActive = true;
-      })
-      .to(slab.position, {y:-.18, duration:.13, ease:'power1.out'})
-      .to(slab.position, {y:0, duration:.16, ease:'power1.inOut'})
-      .to(slab.scale, {x:1.01,y:.97,z:1.01, duration:.13, ease:'power1.out'}, '<')
-      .to(slab.scale, {x:1,y:1,z:1, duration:.2, ease:'power1.inOut'})
-      .to([slab.position, slab], {duration:.7, delay:.25, ease:'power2.in',
-          onUpdate:function(){}, onStart:function(){
-            gsap.to(slab.position, {y:-16, duration:.7, ease:'power2.in'});
-            gsap.to(slabMat, {opacity:0, duration:.6, delay:.15, onStart:()=>{slabMat.transparent=true;}});
-            gsap.to(slabEdge.material, {opacity:0, duration:.5});
-          }});
-  }
-  const debrisMat = debris.material;
-  let debrisActive = false, debrisClock = 0;
-
-  ScrollTrigger.create({
-    trigger: '.hero',
-    start: 'bottom top',
-    once: true,
-    onEnter: runImpact
-  });
-
-  function animate(){
-    requestAnimationFrame(animate);
-    if(debrisActive){
-      debrisClock += 0.016;
-      for(let i=0;i<debrisCount;i++){
-        debrisPos[i*3]   += debrisVel[i].x;
-        debrisPos[i*3+1] += debrisVel[i].y;
-        debrisPos[i*3+2] += debrisVel[i].z;
-        debrisVel[i].y -= 0.01;
-      }
-      debrisGeo.attributes.position.needsUpdate = true;
-      debrisMat.opacity = Math.max(0, .9 - debrisClock*0.6);
-      if(debrisClock > 1.6) debrisActive = false;
-    }
-    renderer.render(scene, camera);
-  }
-  animate();
-  window.addEventListener('resize', ()=>{
-    camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
-})();
 
 if(!REDUCED){
   document.querySelectorAll('.cat-card').forEach(card=>{
