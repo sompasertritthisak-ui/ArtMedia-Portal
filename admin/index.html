@@ -234,6 +234,15 @@ select option{background:#11151f;color:#f3f2ee;}
 .stage-banner{display:flex;gap:12px;align-items:flex-start;border-radius:var(--radius);padding:14px 16px;margin:20px 0 28px;font-size:13px;}
 .stage-banner.declined{background:var(--redbg);border:1px solid rgba(248,113,113,.3);color:#fca5a5;}
 .stage-banner.trashed{background:var(--redbg);border:1px solid rgba(248,113,113,.3);color:#fca5a5;}
+.delivery-section{margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08);}
+.delivery-drop{border:1px dashed rgba(255,255,255,.18);border-radius:var(--radius-sm);padding:18px;text-align:center;cursor:pointer;transition:all .2s var(--ease);background:rgba(255,255,255,.02);font-size:12.5px;color:var(--mist);}
+.delivery-drop:hover,.delivery-drop.drag{border-color:var(--gold);background:var(--gold-dim);}
+.delivery-drop i{font-size:22px;color:var(--gold-l);display:block;margin-bottom:6px;}
+.delivery-file-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.delivery-file-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.02);font-size:12.5px;}
+.delivery-file-item i{color:var(--gold-l);}
+.delivery-file-item .dfname{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.delivery-file-item .rm{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);}
 
 .toast{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,var(--panel2),var(--panel3));border:1px solid var(--gold-line);color:#fff;padding:15px 22px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;gap:10px;}
@@ -529,6 +538,10 @@ function syncUpsert(reqObj){
 function syncReschedule(reqObj){
   if(!WEB_APP_URL) return;
   fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'reschedule', payload:reqObj})}).catch(()=>{});
+}
+function syncDelivery(reqObj){
+  if(!WEB_APP_URL) return;
+  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'deliver', payload:reqObj})}).catch(()=>{});
 }
 function syncDelete(id){
   if(!WEB_APP_URL) return;
@@ -928,7 +941,8 @@ function renderBoard(reqs){
 }
 
 /** Same 4-stage model the public Track Request page shows, so staff and requestors
- *  always see the identical picture of where a request stands. */
+ *  always see the identical picture of where a request stands.
+ *  Approval = the Reviewed stage is complete, so Production becomes the active stage. */
 function buildStageTrack(r){
   if(r.status === 'Declined'){
     return `<div class="stage-banner declined"><i class="ti ti-alert-triangle" style="font-size:20px;flex-shrink:0;"></i><div><strong>Declined.</strong>${r.declineReason ? ' Reason: ' + escHtml(r.declineReason) : ''}</div></div>`;
@@ -936,11 +950,16 @@ function buildStageTrack(r){
   if(r.status === 'Trash'){
     return `<div class="stage-banner trashed"><i class="ti ti-clock-x" style="font-size:20px;flex-shrink:0;"></i><div><strong>Expired.</strong> Left Pending past 72 hours and auto-moved to Trash.</div></div>`;
   }
-  const stageIdx = r.status==='Pending' ? 0 : r.status==='Approved' ? 1 : r.status==='In Progress' ? 2 : r.status==='Completed' ? 3 : 0;
   const labels = ['Submitted','Reviewed','Production','Delivered'];
-  const fillPct = [4, 37, 70, 100][stageIdx];
+  // doneCount = stages fully complete; currentIndex = the active/glowing stage (null once fully delivered)
+  let doneCount, currentIndex;
+  if(r.status === 'Pending'){ doneCount = 1; currentIndex = 1; }
+  else if(r.status === 'Approved' || r.status === 'In Progress'){ doneCount = 2; currentIndex = 2; }
+  else if(r.status === 'Completed'){ doneCount = 4; currentIndex = null; }
+  else { doneCount = 0; currentIndex = 0; }
+  const fillPct = currentIndex===null ? 100 : [4,37,70,100][currentIndex];
   return `<div class="stage-track"><div class="fill-line" style="width:calc(${fillPct}% - ${fillPct===4?'0':'10%'});"></div>` +
-    labels.map((l,i)=>`<div class="s-step ${i<stageIdx?'done':i===stageIdx?'current':''}"><div class="s-dot">${i<stageIdx?'<i class="ti ti-check"></i>':(i+1)}</div><span>${l}</span></div>`).join('') +
+    labels.map((l,i)=>`<div class="s-step ${i<doneCount?'done':i===currentIndex?'current':''}"><div class="s-dot">${i<doneCount?'<i class="ti ti-check"></i>':(i+1)}</div><span>${l}</span></div>`).join('') +
     `</div>`;
 }
 
@@ -968,9 +987,6 @@ function openDetail(id){
     if(r.status==='Pending'){
       actions += `<button class="btn btn-green" onclick="approveReq('${id}')"><i class="ti ti-check"></i> Approve</button>`;
       actions += `<button class="btn btn-red" onclick="declineReq('${id}')"><i class="ti ti-x"></i> Decline</button>`;
-    }
-    if(r.status==='Approved' || r.status==='In Progress'){
-      actions += `<button class="btn btn-gold" onclick="completeReq('${id}')"><i class="ti ti-checks"></i> Mark Complete</button>`;
     }
   }
 
@@ -1019,12 +1035,24 @@ function openDetail(id){
         </div>
         <button class="btn btn-outline btn-sm" onclick="rescheduleReq('${id}')" style="margin-bottom:6px;"><i class="ti ti-calendar-time"></i> Save New Schedule</button>
         ` : ''}
+        ${canManage && (r.status==='Approved' || r.status==='In Progress') ? `
+        <div class="dfield delivery-section">
+          <div class="dl">Send Final Deliverables</div>
+          ${(r.deliveryFiles&&r.deliveryFiles.length) ? `<p style="font-size:12px;color:var(--emerald-l);margin:0 0 10px;"><i class="ti ti-check"></i> ${r.deliveryFiles.length} file(s) already delivered previously.</p>` : ''}
+          <div class="delivery-drop" id="deliveryDrop"><i class="ti ti-cloud-upload"></i> Click or drop final files here</div>
+          <input type="file" id="deliveryFileInput" multiple hidden>
+          <div id="deliveryFileList" class="delivery-file-list"></div>
+          <textarea id="deliveryNote" placeholder="Optional message to include in the delivery email…" style="width:100%;min-height:64px;margin-top:10px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;background:var(--panel2);color:var(--platinum);font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+          <button class="btn btn-gold btn-sm" onclick="sendDelivery('${id}')" style="margin-top:10px;"><i class="ti ti-send"></i> Send to Requestor &amp; Mark Complete</button>
+        </div>
+        ` : ''}
         <div class="modal-actions">${actions || '<span style="color:var(--faint);font-size:13px;">No actions available for your role.</span>'}</div>
       </div>
     </div>
   </div>`;
   gsap.fromTo('#modalBg', {opacity:0}, {opacity:1, duration:.25});
   gsap.fromTo('#modalCard', {opacity:0,y:24,scale:.97}, {opacity:1,y:0,scale:1,duration:.4,ease:'power3.out'});
+  initDeliveryDrop();
 }
 function closeModal(){
   const bg = document.getElementById('modalBg');
@@ -1068,6 +1096,66 @@ function rescheduleReq(id){
   openDetail(id);
   renderAll();
 }
+
+/* ============================================================
+   FINAL DELIVERY — attach files + note, send to requestor, mark Completed
+   ============================================================ */
+let deliveryFiles = [];
+function initDeliveryDrop(){
+  const drop = document.getElementById('deliveryDrop');
+  const input = document.getElementById('deliveryFileInput');
+  if(!drop || !input) return;
+  deliveryFiles = [];
+  renderDeliveryFiles();
+  drop.addEventListener('click', ()=>input.click());
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', e=>handleDeliveryFiles(e.dataTransfer.files));
+  input.addEventListener('change', e=>handleDeliveryFiles(e.target.files));
+}
+function handleDeliveryFiles(fileArr){
+  Array.from(fileArr).forEach(file=>{
+    if(file.size > 25*1024*1024){ alert(`"${file.name}" exceeds the 25MB limit and was not added.`); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{ deliveryFiles.push({name:file.name, size:file.size, mime:file.type||'application/octet-stream', url:reader.result, at:new Date().toISOString()}); renderDeliveryFiles(); };
+    reader.readAsDataURL(file);
+  });
+}
+function renderDeliveryFiles(){
+  const el = document.getElementById('deliveryFileList');
+  if(!el) return;
+  el.innerHTML = deliveryFiles.map((f,i)=>`<div class="delivery-file-item"><i class="ti ${iconForMimeAdmin(f.mime)}"></i><span class="dfname">${escHtml(f.name)}</span><span style="color:var(--faint);">${fmtSize(f.size)}</span><button type="button" class="rm" data-i="${i}"><i class="ti ti-x"></i></button></div>`).join('');
+  el.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click', ()=>{ deliveryFiles.splice(+btn.dataset.i,1); renderDeliveryFiles(); }));
+}
+function iconForMimeAdmin(mime){
+  if(mime.startsWith('image/')) return 'ti-photo';
+  if(mime.startsWith('video/')) return 'ti-video';
+  if(mime.startsWith('audio/')) return 'ti-music';
+  if(mime.includes('pdf')) return 'ti-file-type-pdf';
+  if(mime.includes('zip')) return 'ti-file-zip';
+  return 'ti-file';
+}
+function sendDelivery(id){
+  const note = document.getElementById('deliveryNote').value.trim();
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
+  if(!deliveryFiles.length && !note && !confirm('No files or message added — mark this request Completed anyway?')) return;
+  const existing = r.deliveryFiles || [];
+  Object.assign(r, {
+    status: 'Completed',
+    deliveryFiles: existing.concat(deliveryFiles),
+    deliveryNote: note || r.deliveryNote || '',
+    lastUpdated: new Date().toISOString()
+  });
+  saveStore(store);
+  syncDelivery(r);
+  toast('Delivered — requestor notified','send');
+  deliveryFiles = [];
+  closeModal();
+  renderAll();
+}
+
 function approveReq(id){ updateReq(id,{status:'Approved'}); toast('Request approved'); openDetail(id); }
 function declineReq(id){
   const reasons = ['Insufficient lead time','Outside team scope','Duplicate request','Missing information','Other'];
@@ -1419,6 +1507,8 @@ function doPost(e){
     sendApprovalEmail(payload);
   } else if(action === 'reschedule' && ((payload.deadline||'') !== (result.oldDeadline||'') || (payload.evdate||'') !== (result.oldEvdate||''))){
     sendRescheduleEmail(payload, result.oldDeadline, result.oldEvdate);
+  } else if(action === 'deliver' && payload.status === 'Completed' && result.oldStatus !== 'Completed'){
+    sendDeliveryEmail(payload);
   }
   return jsonOut({ok:true});
 }
@@ -1468,9 +1558,15 @@ function ensureHeaders(sheet){
 /** Uploads any base64 attachments to Drive and rewrites payload.atts[].url to a shareable link.
  *  Already-synced attachments (Drive links) are left untouched — safe to call on every save. */
 function saveAttachmentsToDrive(payload){
-  if(!payload.atts || !payload.atts.length) return;
+  uploadFilesToDrive(payload.atts);
+  uploadFilesToDrive(payload.deliveryFiles);
+}
+/** Uploads any base64 files in the array to Drive and rewrites their .url to a shareable link.
+ *  Already-synced files (Drive links) are left untouched — safe to call on every save. */
+function uploadFilesToDrive(files){
+  if(!files || !files.length) return;
   const folder = CONFIG.DRIVE_FOLDER_ID ? DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID) : DriveApp.getRootFolder();
-  payload.atts.forEach(function(att){
+  files.forEach(function(att){
     if(!att.url || att.url.indexOf('data:') !== 0) return;
     const match = att.url.match(/^data:(.*?);base64,(.*)$/);
     if(!match) return;
@@ -1744,6 +1840,37 @@ function sendRescheduleEmail(payload, oldDeadline, oldEvdate){
   MailApp.sendEmail({
     to: payload.email,
     subject: 'Your Request Schedule Was Updated — ' + payload.id,
+    htmlBody: html,
+    inlineImages: {logo: getLogoBlob()}
+  });
+}
+
+/** Sends the requestor their final files + a completion note when staff mark a request Completed via the delivery flow. */
+function sendDeliveryEmail(payload){
+  if(!payload.email) return;
+  const files = payload.deliveryFiles || [];
+
+  const fileLinks = files.length
+    ? files.map(function(f){
+        return '<tr><td style="padding:9px 0;border-bottom:1px solid #eee2bd;"><a href="' + f.url + '" style="color:' + MAIL_C.emeraldDeep + ';font-weight:700;text-decoration:none;">' + escapeHtml(f.name) + '</a></td></tr>';
+      }).join('')
+    : '<tr><td style="padding:9px 0;color:' + MAIL_C.textMuted + ';font-size:13px;">No files attached — see message below.</td></tr>';
+
+  const bodyRows =
+    '<tr><td style="padding:14px 32px 4px;"><div style="font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">Hi ' + escapeHtml(payload.name || 'there') + ', your request is complete! Here are your final deliverables from the Artmedia team.</div></td></tr>' +
+    '<tr><td style="padding:18px 32px 4px;">' +
+      '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + MAIL_C.textMuted + ';margin-bottom:8px;">Final Files</div>' +
+      '<table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' + fileLinks + '</table>' +
+    '</td></tr>' +
+    (payload.deliveryNote ? '<tr><td style="padding:18px 32px 0;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Message from the team</div><div style="font-family:Arial,sans-serif;font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">' + escapeHtml(payload.deliveryNote) + '</div></td></tr>' : '') +
+    '<tr><td style="padding:18px 32px 4px;"><div style="font-size:13px;color:' + MAIL_C.textMuted + ';line-height:1.6;">Reference <strong>' + payload.id + '</strong>. Thanks for working with PBIS Artmedia!</div></td></tr>';
+
+  const html = emailShell('Request Delivered \u2713', escapeHtml(payload.title || 'Your request'), MAIL_C.emeraldLight, bodyRows,
+    'This is the final delivery for this request. Reply to this email if anything is missing.');
+
+  MailApp.sendEmail({
+    to: payload.email,
+    subject: 'Your Final Deliverables Are Ready \u2014 ' + payload.id,
     htmlBody: html,
     inlineImages: {logo: getLogoBlob()}
   });
