@@ -4,16 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Media Request Portal — PBIS Artmedia</title>
+<link rel="icon" id="favicon" href="">
+<meta name="theme-color" content="#0a3b2e">
+<meta property="og:title" content="PBIS Artmedia — Media Request Portal">
+<meta property="og:description" content="Submit and track creative requests to the PBIS Artmedia studio — photography, design, digital, marketing and video editing.">
+<meta property="og:type" content="website">
+<meta name="description" content="Submit and track media requests to the PBIS Artmedia studio.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
 <style>
 :root{
   color-scheme: dark;
-  --void:#040509; --obsidian:#0a0c14; --panel:#0e1119; --panel2:#11151f;
-  --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.26);
+  --void:#030b08; --obsidian:#071a13; --panel:#0a2118; --panel2:#0d2a1e;
+  --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.3);
   --cyan:#3fe0d0; --cyan-dim:rgba(63,224,208,.12);
-  --emerald:#0a3b2e; --emerald-l:#1f8f6b; --emerald-dim:rgba(31,143,107,.16); --emerald-line:rgba(31,143,107,.32);
+  --emerald:#0a3b2e; --emerald-l:#2eab82; --emerald-dim:rgba(46,171,130,.18); --emerald-line:rgba(46,171,130,.36);
   --platinum:#f3f2ee; --mist:#a3abbd; --faint:#5c6577;
   --green:#34d399; --greenbg:rgba(52,211,153,.12);
   --red:#f87171; --redbg:rgba(248,113,113,.12);
@@ -237,6 +243,7 @@ img,svg{display:block;}
 .filelist{margin-top:16px;display:flex;flex-direction:column;gap:9px;}
 .fileitem{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);background:rgba(255,255,255,.02);font-size:13px;}
 .fileitem i{color:var(--gold-l);font-size:18px;}
+.fileitem .fthumb{width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid var(--gold-line);flex-shrink:0;}
 .fileitem .fname{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fileitem .fsize{color:var(--faint);font-size:11.5px;}
 .fileitem .rm{background:none;border:none;color:var(--red);font-size:18px;padding:4px;min-height:auto;cursor:none;}
@@ -244,6 +251,34 @@ img,svg{display:block;}
 .banner{display:none;align-items:center;gap:15px;background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(52,211,153,.03));border:1px solid rgba(52,211,153,.4);color:#6ee7b7;border-radius:var(--radius);padding:18px 22px;margin-bottom:26px;font-size:14px;font-weight:600;}
 .banner.show{display:flex;}
 .banner i{font-size:26px;color:var(--green);}
+.draft-banner{display:flex;align-items:center;gap:12px;background:var(--gold-dim);border:1px solid var(--gold-line);border-radius:var(--radius);padding:14px 18px;margin-bottom:28px;font-size:13px;color:var(--gold-l);flex-wrap:wrap;}
+.draft-banner i{font-size:18px;flex-shrink:0;}
+.draft-banner span{flex:1;min-width:160px;}
+.draft-banner button{background:none;border:1px solid var(--gold-line);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--platinum);cursor:none;transition:all .2s var(--ease);}
+.draft-banner button:hover{border-color:var(--gold);background:var(--gold-dim);}
+#draftDiscardBtn{border-color:rgba(248,113,113,.3);color:#fca5a5;}
+#draftDiscardBtn:hover{border-color:var(--red);background:var(--redbg);}
+
+/* ===== SUCCESS CONFIRMATION MODAL ===== */
+.confirm-bg{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(3,11,8,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.confirm-card{position:relative;width:100%;max-width:480px;background:linear-gradient(165deg,var(--panel),var(--emerald) 140%);border:1px solid var(--gold-line);border-radius:28px;padding:48px 40px 40px;text-align:center;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 90px var(--emerald-dim);overflow:hidden;}
+.confirm-card::before{content:'';position:absolute;top:-1px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.confirm-card::after{content:'';position:absolute;inset:0;background:radial-gradient(400px 250px at 50% 0%,var(--gold-dim),transparent 65%);pointer-events:none;}
+.confirm-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--platinum);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:none;transition:border-color .2s var(--ease),background .2s var(--ease);z-index:2;}
+.confirm-close:hover{border-color:var(--gold);background:var(--gold-dim);}
+.confirm-logo{width:110px;height:auto;margin:0 auto 22px;filter:drop-shadow(0 8px 30px rgba(201,168,76,.45));position:relative;z-index:1;}
+.confirm-check{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--emerald-l),#1a6349);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#fff;box-shadow:0 0 0 6px var(--emerald-dim),0 12px 30px rgba(46,171,130,.35);position:relative;z-index:1;}
+.confirm-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--emerald-l);margin-bottom:10px;position:relative;z-index:1;}
+.confirm-title{font-family:var(--serif);font-size:28px;font-weight:600;color:var(--platinum);margin:0 0 10px;position:relative;z-index:1;}
+.confirm-sub{font-size:13.5px;color:var(--mist);line-height:1.6;margin:0 0 28px;position:relative;z-index:1;}
+.confirm-id-box{background:rgba(0,0,0,.25);border:1px solid var(--gold-line);border-radius:16px;padding:20px 24px;margin-bottom:28px;position:relative;z-index:1;}
+.confirm-id-label{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--faint);margin-bottom:8px;}
+.confirm-id-value{font-family:var(--serif);font-size:32px;font-weight:700;color:var(--gold-l);letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:12px;}
+.confirm-copy{background:none;border:1px solid var(--gold-line);border-radius:8px;width:34px;height:34px;color:var(--gold-l);font-size:15px;cursor:none;transition:all .2s var(--ease);flex-shrink:0;}
+.confirm-copy:hover{background:var(--gold-dim);border-color:var(--gold);}
+.confirm-copy.copied{background:var(--emerald-dim);border-color:var(--emerald-l);color:var(--emerald-l);}
+.confirm-actions{display:flex;flex-direction:column;gap:12px;position:relative;z-index:1;}
+.confirm-actions .btn{width:100%;justify-content:center;}
 
 .footer{text-align:center;padding:60px 24px 70px;color:var(--faint);font-size:13px;position:relative;z-index:2;border-top:1px solid transparent;border-image:linear-gradient(90deg,transparent,var(--emerald-l),var(--gold-line),var(--emerald-l),transparent) 1;}
 .footer .flinks{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-bottom:16px;}
@@ -256,6 +291,7 @@ img,svg{display:block;}
 <div id="cursor"></div><div id="cursorDot"></div>
 <canvas id="bgCanvas"></canvas>
 <div class="grain"></div>
+<div id="confirmModalRoot"></div>
 
 <nav class="nav">
   <div class="nav-inner">
@@ -369,6 +405,12 @@ img,svg{display:block;}
   <form class="panel" id="reqForm" novalidate>
     <h2 id="requestForm">New Media Request</h2>
     <p class="panel-sub">Fill in as much detail as you can — the more context, the faster we can help.</p>
+    <div class="draft-banner hidden" id="draftBanner">
+      <i class="ti ti-clock-pause"></i>
+      <span id="draftBannerText">You have an unsaved draft.</span>
+      <button type="button" id="draftResumeBtn">Resume</button>
+      <button type="button" id="draftDiscardBtn">Discard</button>
+    </div>
 
     <div class="formsec">
       <div class="section-title"><span class="num">01</span> Your Information</div>
@@ -478,6 +520,9 @@ img,svg{display:block;}
 <script>
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 gsap.registerPlugin(ScrollTrigger);
+
+const navLogoSrc = document.querySelector('.pbis-logo img')?.src;
+if(navLogoSrc){ document.getElementById('favicon').href = navLogoSrc; }
 
 if(!REDUCED && matchMedia('(hover:hover)').matches){
   const cursor = document.getElementById('cursor'), dot = document.getElementById('cursorDot');
@@ -821,6 +866,57 @@ function jumpToTrack(id, email){
   setTimeout(()=>document.getElementById('trackEmailInput').focus(), 500);
 }
 
+function showConfirmModal(id, email){
+  const logoSrc = document.querySelector('.pbis-logo img')?.src || '';
+  document.getElementById('confirmModalRoot').innerHTML = `
+    <div class="confirm-bg" id="confirmBg">
+      <div class="confirm-card" id="confirmCard">
+        <button type="button" class="confirm-close" id="confirmCloseBtn" aria-label="Close"><i class="ti ti-x"></i></button>
+        <img src="${logoSrc}" alt="PBIS Artmedia" class="confirm-logo">
+        <div class="confirm-check"><i class="ti ti-check"></i></div>
+        <div class="confirm-eyebrow">Request Received</div>
+        <div class="confirm-title">You're all set.</div>
+        <p class="confirm-sub">Your request has been sent to the Artmedia studio. We'll review it and respond within 72 hours.</p>
+        <div class="confirm-id-box">
+          <div class="confirm-id-label">Your Track ID</div>
+          <div class="confirm-id-value">${id}<button type="button" class="confirm-copy" id="confirmCopyBtn" aria-label="Copy Track ID"><i class="ti ti-copy"></i></button></div>
+        </div>
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-gold magnetic" id="confirmTrackBtn"><i class="ti ti-radar-2"></i> Track This Request</button>
+          <button type="button" class="btn btn-outline magnetic" id="confirmCloseBtn2">Submit Another Request</button>
+        </div>
+      </div>
+    </div>`;
+
+  const bg = document.getElementById('confirmBg');
+  gsap.fromTo(bg, {opacity:0}, {opacity:1, duration:.35, ease:'power2.out'});
+  gsap.fromTo('#confirmCard', {opacity:0, y:40, scale:.92}, {opacity:1, y:0, scale:1, duration:.6, ease:'back.out(1.5)', delay:.05});
+
+  const close = ()=>{
+    gsap.to('#confirmCard', {opacity:0, y:20, scale:.95, duration:.25, ease:'power2.in'});
+    gsap.to(bg, {opacity:0, duration:.3, delay:.05, onComplete:()=>{ document.getElementById('confirmModalRoot').innerHTML=''; }});
+  };
+  document.getElementById('confirmCloseBtn').addEventListener('click', close);
+  document.getElementById('confirmCloseBtn2').addEventListener('click', close);
+  bg.addEventListener('click', e=>{ if(e.target===bg) close(); });
+  document.getElementById('confirmTrackBtn').addEventListener('click', ()=>{ close(); setTimeout(()=>jumpToTrack(id, email), 250); });
+  if(!REDUCED){
+    document.querySelectorAll('#confirmCard .magnetic').forEach(el=>{
+      el.addEventListener('mousemove', e=>{
+        const r = el.getBoundingClientRect();
+        const x = e.clientX - r.left - r.width/2, y = e.clientY - r.top - r.height/2;
+        gsap.to(el, {x:x*0.2, y:y*0.3, duration:.4, ease:'power3.out'});
+      });
+      el.addEventListener('mouseleave', ()=>gsap.to(el,{x:0,y:0,duration:.5,ease:'elastic.out(1,0.4)'}));
+    });
+  }
+  document.getElementById('confirmCopyBtn').addEventListener('click', function(){
+    navigator.clipboard.writeText(id).then(()=>{
+      this.classList.add('copied'); this.innerHTML = '<i class="ti ti-check"></i>';
+      setTimeout(()=>{ this.classList.remove('copied'); this.innerHTML = '<i class="ti ti-copy"></i>'; }, 1600);
+    });
+  });
+}
 const TYPE_MAP = {
   event: [['photography','Photography'],['videography','Videography'],['campaign-coverage','Campaign Coverage'],['social-coverage','Social Media Coverage']],
   design: [['graphic-design','Graphic Design'],['print','Print Materials'],['signage-banners','Signage & Banners'],['presentation-design','Presentation Design']],
@@ -878,23 +974,143 @@ function iconForMime(mime){
   return 'ti-file';
 }
 function fmtSize(bytes){ if(bytes<1024) return bytes+' B'; if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB'; return (bytes/1024/1024).toFixed(1)+' MB'; }
+function compressImage(file){
+  return new Promise(resolve=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      img.onload = ()=>{
+        const maxDim = 1920;
+        let {width, height} = img;
+        if(width > maxDim || height > maxDim){
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width*scale); height = Math.round(height*scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        // Only use the compressed version if it's actually smaller
+        resolve(dataUrl.length < reader.result.length ? dataUrl : reader.result);
+      };
+      img.onerror = ()=>resolve(reader.result);
+      img.src = reader.result;
+    };
+    reader.onerror = ()=>resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
 function handleFiles(fileArr){
   Array.from(fileArr).forEach(file=>{
     if(file.size > 25*1024*1024){ alert(`"${file.name}" exceeds the 25MB limit and was not added.`); return; }
-    const reader = new FileReader();
-    reader.onload = ()=>{ attachedFiles.push({name:file.name,size:file.size,mime:file.type||'application/octet-stream',url:reader.result,at:new Date().toISOString()}); renderFiles(); };
-    reader.readAsDataURL(file);
+    if(file.type.startsWith('image/') && file.type !== 'image/gif' && file.type !== 'image/svg+xml'){
+      compressImage(file).then(dataUrl=>{
+        if(!dataUrl) return;
+        const approxSize = Math.round(dataUrl.length * 0.75);
+        attachedFiles.push({name:file.name, size:approxSize, mime:'image/jpeg', url:dataUrl, at:new Date().toISOString()});
+        renderFiles();
+      });
+    } else {
+      const reader = new FileReader();
+      reader.onload = ()=>{ attachedFiles.push({name:file.name,size:file.size,mime:file.type||'application/octet-stream',url:reader.result,at:new Date().toISOString()}); renderFiles(); };
+      reader.readAsDataURL(file);
+    }
   });
 }
 function renderFiles(){
   filelist.innerHTML = attachedFiles.map((f,i)=>`
-    <div class="fileitem"><i class="ti ${iconForMime(f.mime)}"></i><span class="fname">${f.name}</span><span class="fsize">${fmtSize(f.size)}</span>
+    <div class="fileitem">${f.mime.startsWith('image/') ? `<img src="${f.url}" class="fthumb" alt="">` : `<i class="ti ${iconForMime(f.mime)}"></i>`}<span class="fname">${f.name}</span><span class="fsize">${fmtSize(f.size)}</span>
     <button type="button" class="rm" data-i="${i}" aria-label="Remove ${f.name}"><i class="ti ti-x"></i></button></div>`).join('');
   filelist.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click', ()=>{ attachedFiles.splice(+btn.dataset.i,1); renderFiles(); }));
 }
 
+/* ============================================================
+   DRAFT AUTO-SAVE
+   ============================================================ */
+const DRAFT_KEY = 'pbis-draft';
+const DRAFT_FIELDS = ['name','dept','email','phone','title','desc','deliverables','evdate','deadline','location'];
+let draftSaveTimer = null;
+
+function collectDraft(){
+  const d = {cat: selectedCat, type: document.getElementById('typeSelect').value, ts: Date.now(), fields:{}};
+  DRAFT_FIELDS.forEach(name=>{
+    const el = document.querySelector(`#reqForm [name="${name}"]`);
+    if(el && el.value) d.fields[name] = el.value;
+  });
+  return d;
+}
+function isDraftEmpty(d){
+  return !d.cat && Object.keys(d.fields).length === 0;
+}
+function saveDraftNow(){
+  const d = collectDraft();
+  if(isDraftEmpty(d)){ localStorage.removeItem(DRAFT_KEY); return; }
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+}
+function scheduleDraftSave(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(saveDraftNow, 600);
+}
+document.getElementById('reqForm').addEventListener('input', scheduleDraftSave);
+document.getElementById('reqForm').addEventListener('change', scheduleDraftSave);
+
+function applyDraft(d){
+  DRAFT_FIELDS.forEach(name=>{
+    const el = document.querySelector(`#reqForm [name="${name}"]`);
+    if(el && d.fields[name] !== undefined) el.value = d.fields[name];
+  });
+  if(d.cat){
+    const card = document.querySelector(`.cat-card[data-cat="${d.cat}"]`);
+    if(card) card.click();
+    if(d.type){ setTimeout(()=>{ document.getElementById('typeSelect').value = d.type; }, 0); }
+  }
+}
+function timeAgo(ts){
+  const mins = Math.round((Date.now()-ts)/60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins + ' minute' + (mins===1?'':'s') + ' ago';
+  const hrs = Math.round(mins/60);
+  return hrs + ' hour' + (hrs===1?'':'s') + ' ago';
+}
+(function checkForDraft(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    if(isDraftEmpty(d)) return;
+    const banner = document.getElementById('draftBanner');
+    document.getElementById('draftBannerText').textContent = `You have an unsaved draft from ${timeAgo(d.ts)}.`;
+    banner.classList.remove('hidden');
+    document.getElementById('draftResumeBtn').addEventListener('click', ()=>{
+      applyDraft(d);
+      banner.classList.add('hidden');
+    });
+    document.getElementById('draftDiscardBtn').addEventListener('click', ()=>{
+      localStorage.removeItem(DRAFT_KEY);
+      banner.classList.add('hidden');
+    });
+  }catch(e){ /* corrupted draft, ignore */ }
+})();
+
+/* ============================================================
+   SUBMISSION COOLDOWN — basic client-side spam throttle
+   ============================================================ */
+const SUBMIT_COOLDOWN_MS = 45000;
+function submitOnCooldown(){
+  const last = +localStorage.getItem('pbis-last-submit-ts') || 0;
+  return (Date.now() - last) < SUBMIT_COOLDOWN_MS;
+}
+function cooldownSecondsLeft(){
+  const last = +localStorage.getItem('pbis-last-submit-ts') || 0;
+  return Math.ceil((SUBMIT_COOLDOWN_MS - (Date.now()-last))/1000);
+}
+
 document.getElementById('reqForm').addEventListener('submit', function(e){
   e.preventDefault();
+  if(submitOnCooldown()){
+    alert(`Please wait ${cooldownSecondsLeft()}s before submitting another request — this helps prevent accidental duplicate submissions.`);
+    return;
+  }
   const form = e.target;
   let valid = true;
   form.querySelectorAll('[data-req]').forEach(f=>{
@@ -930,20 +1146,17 @@ document.getElementById('reqForm').addEventListener('submit', function(e){
     };
     saveStore(store);
     syncUpsert(store[id]);
+    localStorage.setItem('pbis-last-submit-ts', String(Date.now()));
+    localStorage.removeItem(DRAFT_KEY);
+    document.getElementById('draftBanner').classList.add('hidden');
 
-    const banner = document.getElementById('banner');
-    document.getElementById('bannerText').innerHTML = `Request submitted! Your Track ID is <strong>${id}</strong> — <a href="#" id="goTrackLink" style="color:#6ee7b7;text-decoration:underline;cursor:none;">track its status here</a>. We'll be in touch within 72 hours.`;
-    banner.classList.add('show');
-    document.getElementById('goTrackLink').addEventListener('click', function(ev){ ev.preventDefault(); jumpToTrack(id, fd.get('email')); });
-    gsap.fromTo(banner, {opacity:0,y:-14,scale:.97},{opacity:1,y:0,scale:1,duration:.5,ease:'back.out(1.6)'});
-    window.scrollTo({top:0,behavior:'smooth'});
+    showConfirmModal(id, fd.get('email'));
 
     form.reset(); attachedFiles=[]; renderFiles(); selectedCat=null;
     document.querySelectorAll('.cat-card').forEach(c=>{c.classList.remove('active');c.setAttribute('aria-pressed','false');});
     document.getElementById('typeWrap').style.display='none';
     document.querySelectorAll('.invalid').forEach(f=>f.classList.remove('invalid'));
     submitBtn.disabled=false; submitBtn.innerHTML='<i class="ti ti-send"></i> Submit Request';
-    setTimeout(()=>banner.classList.remove('show'), 5000);
   }, 500);
 });
 </script>
