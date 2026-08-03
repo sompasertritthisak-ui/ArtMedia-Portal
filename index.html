@@ -234,6 +234,11 @@ img,svg{display:block;}
 .field .err{font-size:12px;color:var(--red);margin-top:6px;display:none;font-weight:600;}
 .field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--red);}
 .field.invalid .err{display:block;}
+#catSection,#ackSection{scroll-margin-top:110px;}
+.field{scroll-margin-top:110px;}
+#catGrid.invalid{outline:2px solid var(--red);outline-offset:10px;border-radius:var(--radius);}
+#catErr.show,#ackErr.show{display:block!important;}
+#ackSection.invalid .check-row{border-color:var(--red);}
 
 .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;perspective:1000px;}
 .cat-card{position:relative;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:24px;cursor:none;transition:border-color .3s var(--ease),background .3s var(--ease);background:rgba(255,255,255,.02);transform-style:preserve-3d;}
@@ -444,9 +449,9 @@ img,svg{display:block;}
       </div>
     </div>
 
-    <div class="formsec">
+    <div class="formsec" id="catSection">
       <div class="section-title"><span class="num">02</span> Request Category</div>
-      <div class="cat-grid">
+      <div class="cat-grid" id="catGrid">
         <div class="cat-card" data-cat="event" role="button" tabindex="0" aria-pressed="false">
           <i class="ti ti-camera"></i>
           <h4>Event Coverage</h4>
@@ -473,6 +478,7 @@ img,svg{display:block;}
           <p>Photo retouching, video editing and motion graphics / animation.</p>
         </div>
       </div>
+      <span class="err" id="catErr" style="display:none;margin-top:8px;">Please select a request category.</span>
       <div class="field" id="typeWrap" style="display:none;margin-top:18px;">
         <label>Type of Request <span class="req">*</span></label>
         <select name="type" id="typeSelect"></select>
@@ -507,10 +513,11 @@ img,svg{display:block;}
       <div class="filelist" id="filelist"></div>
     </div>
 
-    <div class="formsec">
+    <div class="formsec" id="ackSection">
       <div class="section-title"><span class="num">06</span> Acknowledgement</div>
       <label class="check-row"><input type="checkbox" id="ack1" required><span>I confirm the information provided is accurate and I understand requests require at least 5 business days' lead time.</span></label>
       <label class="check-row"><input type="checkbox" id="ack2" required><span>I understand this request will be automatically moved to Trash if left Pending for more than 72 hours.</span></label>
+      <span class="err" id="ackErr" style="display:none;">Please confirm both acknowledgement checkboxes.</span>
     </div>
 
     <button type="submit" class="btn btn-gold btn-block magnetic" id="submitBtn" style="min-height:56px;font-size:15px;">
@@ -1191,15 +1198,41 @@ document.getElementById('reqForm').addEventListener('submit', function(e){
   }
   const form = e.target;
   let valid = true;
+
   form.querySelectorAll('[data-req]').forEach(f=>{
     const input = f.querySelector('input,select,textarea');
     if(!input.value.trim()){ f.classList.add('invalid'); valid=false; } else { f.classList.remove('invalid'); }
   });
-  if(!selectedCat){ valid=false; alert('Please select a request category.'); }
-  else if(!document.getElementById('typeSelect').value){ document.getElementById('typeWrap').classList.add('invalid'); valid=false; }
-  else { document.getElementById('typeWrap').classList.remove('invalid'); }
-  if(!document.getElementById('ack1').checked || !document.getElementById('ack2').checked){ valid=false; alert('Please confirm both acknowledgement checkboxes.'); }
-  if(!valid) return;
+
+  const catSection = document.getElementById('catSection');
+  const catGrid = document.getElementById('catGrid');
+  const catErr = document.getElementById('catErr');
+  if(!selectedCat){
+    valid=false; catSection.classList.add('invalid'); catGrid.classList.add('invalid'); catErr.classList.add('show');
+  } else {
+    catSection.classList.remove('invalid'); catGrid.classList.remove('invalid'); catErr.classList.remove('show');
+    if(!document.getElementById('typeSelect').value){
+      document.getElementById('typeWrap').classList.add('invalid'); valid=false;
+    } else { document.getElementById('typeWrap').classList.remove('invalid'); }
+  }
+
+  const ackSection = document.getElementById('ackSection');
+  const ackErr = document.getElementById('ackErr');
+  if(!document.getElementById('ack1').checked || !document.getElementById('ack2').checked){
+    valid = false; ackSection.classList.add('invalid'); ackErr.classList.add('show');
+  } else { ackSection.classList.remove('invalid'); ackErr.classList.remove('show'); }
+
+  if(!valid){
+    // Query fresh, in document order, so whichever invalid section appears first on the
+    // page is where we scroll — not whichever check happened to run first in this function.
+    const firstInvalid = document.querySelector('.invalid');
+    if(firstInvalid){
+      firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+      const focusable = firstInvalid.matches('input,select,textarea') ? firstInvalid : firstInvalid.querySelector('input,select,textarea');
+      if(focusable) setTimeout(()=>focusable.focus({preventScroll:true}), 500);
+    }
+    return;
+  }
 
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
