@@ -4,16 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — PBIS Artmedia</title>
+<link rel="icon" id="favicon" href="">
+<meta name="theme-color" content="#0a3b2e">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
 <style>
 :root{
   color-scheme: dark;
-  --void:#040509; --obsidian:#0a0c14; --panel:#0e1119; --panel2:#11151f; --panel3:#151a26;
-  --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.24);
+  --void:#030b08; --obsidian:#071a13; --panel:#0a2118; --panel2:#0d2a1e; --panel3:#0f3224;
+  --gold:#c9a84c; --gold-l:#f0d78c; --gold-deep:#8a6d1f; --gold-dim:rgba(201,168,76,.13); --gold-line:rgba(201,168,76,.28);
   --cyan:#3fe0d0; --cyan-dim:rgba(63,224,208,.12);
   --purple:#a78bfa;
-  --emerald:#0a3b2e; --emerald-l:#1f8f6b; --emerald-dim:rgba(31,143,107,.16); --emerald-line:rgba(31,143,107,.32);
+  --emerald:#0a3b2e; --emerald-l:#2eab82; --emerald-dim:rgba(46,171,130,.18); --emerald-line:rgba(46,171,130,.36);
   --platinum:#f3f2ee; --mist:#a3abbd; --faint:#5c6577;
   --green:#34d399; --greenbg:rgba(52,211,153,.12);
   --red:#f87171; --redbg:rgba(248,113,113,.12);
@@ -141,6 +143,36 @@ tr.rowhover:hover{background:var(--gold-dim);}
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
 select option{background:#11151f;color:#f3f2ee;}
 .filters select{min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;background:var(--panel2);color:var(--platinum);}
+
+.view-toggle{display:flex;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);overflow:hidden;margin-left:auto;}
+.vt-btn{display:flex;align-items:center;gap:7px;min-height:42px;padding:0 16px;background:var(--panel2);border:none;color:var(--faint);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);}
+.vt-btn.active{background:var(--gold-dim);color:var(--gold-l);}
+.vt-btn:hover:not(.active){color:var(--platinum);}
+
+.bulk-bar{display:flex;align-items:center;gap:12px;background:var(--gold-dim);border:1px solid var(--gold-line);border-radius:var(--radius);padding:12px 18px;margin-bottom:16px;font-size:13px;color:var(--gold-l);font-weight:600;flex-wrap:wrap;}
+
+.board-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}
+@media (max-width:1100px){.board-wrap{grid-template-columns:1fr 1fr;}}
+@media (max-width:640px){.board-wrap{grid-template-columns:1fr;}}
+.board-col{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:14px;min-height:120px;transition:border-color .2s var(--ease),background .2s var(--ease);}
+.board-col.dragover{border-color:var(--gold);background:var(--gold-dim);}
+.board-col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);}
+.board-col-head h4{margin:0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--platinum);}
+.board-col-head span{font-size:11px;color:var(--faint);background:rgba(255,255,255,.06);padding:2px 9px;border-radius:99px;}
+.board-card{background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;cursor:grab;transition:border-color .2s var(--ease),transform .2s var(--ease);}
+.board-card:hover{border-color:var(--gold-line);transform:translateY(-2px);}
+.board-card.dragging{opacity:.4;}
+.board-card .bc-id{font-size:10px;color:var(--faint);font-weight:700;letter-spacing:.04em;margin-bottom:4px;}
+.board-card .bc-title{font-size:13px;font-weight:600;color:var(--platinum);margin-bottom:8px;line-height:1.35;}
+.board-card .bc-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.board-empty{text-align:center;padding:20px 0;color:var(--faint);font-size:11.5px;font-style:italic;}
+
+.notes-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:220px;overflow-y:auto;}
+.note-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:10px 12px;}
+.note-item .n-meta{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-bottom:5px;}
+.note-item .n-text{font-size:13px;color:var(--platinum);line-height:1.5;}
+.note-add{display:flex;gap:8px;}
+.note-add textarea{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;background:var(--panel2);color:var(--platinum);font-family:inherit;font-size:13px;resize:vertical;}
 
 .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:13px;}
 .bar-row .bl{width:110px;font-size:12.5px;font-weight:600;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mist);}
@@ -274,13 +306,28 @@ select,input[type=text],input[type=date]{min-height:44px;}
       <section id="view-requests" class="view hidden">
         <div class="view-title"><div><h1>Requests</h1><p>All submitted media requests</p></div></div>
         <div class="filters">
+          <input type="text" id="fSearch" placeholder="Search ID, title, requestor, email…" style="min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:0 14px;font-size:13px;background:var(--panel2);color:var(--platinum);flex:1;min-width:220px;">
           <select id="fStatus"><option value="">All Status</option><option>Pending</option><option>Approved</option><option>In Progress</option><option>Declined</option><option>Completed</option></select>
           <select id="fCat"><option value="">All Categories</option><option value="event">Event Coverage</option><option value="design">Design & Print</option><option value="digital">Digital & Web</option><option value="marketing">Marketing & Branding</option><option value="editing">Photo & Video Editing</option></select>
           <select id="fType"><option value="">All Types</option></select>
+          <div class="view-toggle">
+            <button type="button" class="vt-btn active" data-mode="table" id="vtTable"><i class="ti ti-table"></i> Table</button>
+            <button type="button" class="vt-btn" data-mode="board" id="vtBoard"><i class="ti ti-layout-kanban"></i> Board</button>
+          </div>
         </div>
-        <div class="card">
-          <div class="table-wrap"><table id="reqTable"><thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Dept</th><th>Type</th><th>Priority</th><th>Status</th><th>72h</th><th>Assigned</th><th>Files</th><th></th></tr></thead><tbody></tbody></table></div>
+
+        <div class="bulk-bar hidden" id="bulkBar">
+          <span id="bulkCount">0 selected</span>
+          <button type="button" class="btn btn-green btn-sm" id="bulkApproveBtn"><i class="ti ti-check"></i> Approve Selected</button>
+          <select id="bulkAssignSelect" style="min-height:36px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 10px;background:var(--panel2);color:var(--platinum);font-size:12.5px;"><option value="">Assign to…</option></select>
+          <button type="button" class="btn btn-outline btn-sm" id="bulkClearBtn">Clear</button>
         </div>
+
+        <div class="card" id="requestsTableWrap">
+          <div class="table-wrap"><table id="reqTable"><thead><tr><th><input type="checkbox" id="selectAllChk"></th><th>ID</th><th>Title</th><th>Category</th><th>Dept</th><th>Type</th><th>Priority</th><th>Status</th><th>72h</th><th>Assigned</th><th>Files</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <div class="board-wrap hidden" id="boardWrap"></div>
       </section>
 
       <!-- STAFF TASKS -->
@@ -352,6 +399,9 @@ select,input[type=text],input[type=date]{min-height:44px;}
 <script>
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const sbLogoSrc = document.querySelector('.sb-brand img')?.src;
+if(sbLogoSrc){ document.getElementById('favicon').href = sbLogoSrc; }
+
 /* ============================================================
    THREE.JS — LOGIN AMBIENT SPHERE
    ============================================================ */
@@ -409,7 +459,7 @@ const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywVAPTqjjKGDSEusV6
 
 const STAFF = [
   {name:'Simon'},{name:'Top'},{name:'Nuza'},{name:'Lane'},{name:'Mooping'},
-  {name:'Tobee'},{name:'Kop'},{name:'Noy'},{name:'Tophy'}
+  {name:'Tobee'},{name:'Kop'},{name:'Noy'},{name:'Tophy'},{name:'Yos'}
 ];
 const TASK_LIMIT = 10;
 
@@ -551,6 +601,46 @@ function boot(){
   fetchRemote().then(renderAll);
   setInterval(()=>fetchRemote().then(renderAll), 25*1000);
   renderAll();
+  initIdleLogout();
+}
+
+/* ============================================================
+   SESSION AUTO-LOGOUT — inactivity protection
+   ============================================================ */
+const IDLE_LIMIT_MS = 15*60*1000;   // 15 minutes idle
+const IDLE_WARN_MS = 60*1000;       // show warning 60s before logout
+let lastActivity = Date.now();
+let idleWarned = false;
+function initIdleLogout(){
+  ['mousemove','mousedown','keydown','scroll','touchstart'].forEach(ev=>{
+    document.addEventListener(ev, ()=>{ lastActivity = Date.now(); if(idleWarned) dismissIdleWarning(); }, {passive:true});
+  });
+  setInterval(()=>{
+    const idleFor = Date.now() - lastActivity;
+    if(idleFor >= IDLE_LIMIT_MS){
+      doLogout();
+    } else if(idleFor >= IDLE_LIMIT_MS - IDLE_WARN_MS && !idleWarned){
+      showIdleWarning();
+    }
+  }, 5000);
+}
+function showIdleWarning(){
+  idleWarned = true;
+  const el = document.createElement('div');
+  el.id = 'idleWarning';
+  el.style.cssText = 'position:fixed;bottom:24px;left:24px;z-index:600;background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--amber);border-radius:12px;padding:16px 20px;color:#fff;font-size:13px;max-width:280px;box-shadow:0 20px 50px rgba(0,0,0,.5);';
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-weight:700;color:var(--amber);margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> Session expiring</div><div style="color:var(--mist);margin-bottom:10px;">You will be signed out soon due to inactivity.</div><button id="staySignedInBtn" style="width:100%;min-height:36px;background:var(--gold-dim);border:1px solid var(--gold-line);border-radius:8px;color:var(--gold-l);font-weight:600;cursor:pointer;">Stay Signed In</button>';
+  document.body.appendChild(el);
+  document.getElementById('staySignedInBtn').addEventListener('click', ()=>{ lastActivity = Date.now(); dismissIdleWarning(); });
+}
+function dismissIdleWarning(){
+  idleWarned = false;
+  const el = document.getElementById('idleWarning');
+  if(el) el.remove();
+}
+function doLogout(){
+  sessionStorage.removeItem('pbis-admin-session');
+  location.reload();
 }
 
 (function restoreSession(){
@@ -685,30 +775,142 @@ function populateTypeFilter(){
   sel.innerHTML = '<option value="">All Types</option>' + Object.entries(TYPE_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
 }
 ['fStatus','fCat','fType'].forEach(id=>document.getElementById(id).addEventListener('change', renderRequests));
+document.getElementById('fSearch').addEventListener('input', ()=>{ clearTimeout(window.__searchT); window.__searchT = setTimeout(renderRequests, 200); });
 
-function renderRequests(){
+let selectedIds = new Set();
+let viewMode = 'table';
+
+document.getElementById('vtTable').addEventListener('click', ()=>setViewMode('table'));
+document.getElementById('vtBoard').addEventListener('click', ()=>setViewMode('board'));
+function setViewMode(mode){
+  viewMode = mode;
+  document.getElementById('vtTable').classList.toggle('active', mode==='table');
+  document.getElementById('vtBoard').classList.toggle('active', mode==='board');
+  document.getElementById('requestsTableWrap').classList.toggle('hidden', mode!=='table');
+  document.getElementById('boardWrap').classList.toggle('hidden', mode!=='board');
+  renderRequests();
+}
+
+function filteredRequests(){
   const fs = document.getElementById('fStatus').value;
   const fc = document.getElementById('fCat').value;
   const ft = document.getElementById('fType').value;
+  const fq = document.getElementById('fSearch').value.trim().toLowerCase();
   let reqs = allRequests().filter(r=>r.status!=='Trash');
   if(fs) reqs = reqs.filter(r=>r.status===fs);
   if(fc) reqs = reqs.filter(r=>r.cat===fc);
   if(ft) reqs = reqs.filter(r=>r.type===ft);
-
-  document.querySelector('#reqTable tbody').innerHTML = reqs.map(r=>`
-    <tr class="rowhover" onclick="openDetail('${r.id}')">
-      <td><strong>${r.id}</strong></td><td>${escHtml(r.title)}</td><td>${catBadge(r.cat)}</td>
-      <td>${escHtml(r.dept)}</td><td>${TYPE_LABELS[r.type]||r.type||'—'}</td><td>${priorityBadge(r.priority)}</td>
-      <td>${statusBadge(r.status)}</td><td>${countdownPill(r)}</td>
-      <td>${r.assigned || '<span style="color:var(--faint);">Unassigned</span>'}</td>
-      <td>${fileBadge(r)}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail('${r.id}')"><i class="ti ti-eye"></i> View</button></td>
-    </tr>`).join('') || emptyRow(11);
+  if(fq) reqs = reqs.filter(r=>
+    (r.id||'').toLowerCase().includes(fq) ||
+    (r.title||'').toLowerCase().includes(fq) ||
+    (r.name||'').toLowerCase().includes(fq) ||
+    (r.email||'').toLowerCase().includes(fq)
+  );
+  return reqs;
 }
 
+function renderRequests(){
+  const reqs = filteredRequests();
+
+  if(viewMode === 'table'){
+    document.querySelector('#reqTable tbody').innerHTML = reqs.map(r=>`
+      <tr class="rowhover" onclick="openDetail('${r.id}')">
+        <td onclick="event.stopPropagation()"><input type="checkbox" class="rowChk" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''}></td>
+        <td><strong>${r.id}</strong></td><td>${escHtml(r.title)}</td><td>${catBadge(r.cat)}</td>
+        <td>${escHtml(r.dept)}</td><td>${TYPE_LABELS[r.type]||r.type||'—'}</td><td>${priorityBadge(r.priority)}</td>
+        <td>${statusBadge(r.status)}</td><td>${countdownPill(r)}</td>
+        <td>${r.assigned || '<span style="color:var(--faint);">Unassigned</span>'}</td>
+        <td>${fileBadge(r)}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail('${r.id}')"><i class="ti ti-eye"></i> View</button></td>
+      </tr>`).join('') || emptyRow(12);
+    document.querySelectorAll('.rowChk').forEach(chk=>chk.addEventListener('change', function(){
+      if(this.checked) selectedIds.add(this.dataset.id); else selectedIds.delete(this.dataset.id);
+      updateBulkBar();
+    }));
+    document.getElementById('selectAllChk').checked = reqs.length>0 && reqs.every(r=>selectedIds.has(r.id));
+  } else {
+    renderBoard(reqs);
+  }
+  updateBulkBar();
+}
+
+document.getElementById('selectAllChk').addEventListener('change', function(){
+  const reqs = filteredRequests();
+  if(this.checked) reqs.forEach(r=>selectedIds.add(r.id));
+  else reqs.forEach(r=>selectedIds.delete(r.id));
+  renderRequests();
+});
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const n = selectedIds.size;
+  if(n===0){ bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  document.getElementById('bulkCount').textContent = n + ' selected';
+  document.getElementById('bulkAssignSelect').innerHTML = '<option value="">Assign to…</option>' + STAFF.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+}
+document.getElementById('bulkClearBtn').addEventListener('click', ()=>{ selectedIds.clear(); renderRequests(); });
+document.getElementById('bulkApproveBtn').addEventListener('click', ()=>{
+  if(!confirm(`Approve ${selectedIds.size} selected request(s)?`)) return;
+  selectedIds.forEach(id=>updateReq(id, {status:'Approved'}, true));
+  toast(`Approved ${selectedIds.size} request(s)`);
+  selectedIds.clear(); renderAll();
+});
+document.getElementById('bulkAssignSelect').addEventListener('change', function(){
+  const staffName = this.value;
+  if(!staffName) return;
+  if(!confirm(`Assign ${selectedIds.size} selected request(s) to ${staffName}?`)) return;
+  selectedIds.forEach(id=>{
+    const store = loadStore();
+    const patch = {assigned: staffName};
+    if(store[id] && store[id].status==='Approved') patch.status = 'In Progress';
+    updateReq(id, patch, true);
+  });
+  toast(`Assigned ${selectedIds.size} request(s) to ${staffName}`);
+  selectedIds.clear(); this.value=''; renderAll();
+});
+
 /* ============================================================
-   DETAIL MODAL
+   KANBAN BOARD
    ============================================================ */
+const BOARD_COLUMNS = ['Pending','Approved','In Progress','Completed'];
+function renderBoard(reqs){
+  const wrap = document.getElementById('boardWrap');
+  wrap.innerHTML = BOARD_COLUMNS.map(col=>{
+    const items = reqs.filter(r=>r.status===col);
+    return `<div class="board-col" data-status="${col}">
+      <div class="board-col-head"><h4>${col}</h4><span>${items.length}</span></div>
+      <div class="board-col-body" data-status="${col}">
+        ${items.length ? items.map(r=>`
+          <div class="board-card" draggable="true" data-id="${r.id}" onclick="openDetail('${r.id}')">
+            <div class="bc-id">${r.id}</div>
+            <div class="bc-title">${escHtml(r.title)}</div>
+            <div class="bc-meta">${catBadge(r.cat)}${r.status==='Pending'?countdownPill(r):''}</div>
+          </div>`).join('') : '<div class="board-empty">No requests</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  wrap.querySelectorAll('.board-card').forEach(card=>{
+    card.addEventListener('dragstart', e=>{ card.classList.add('dragging'); e.dataTransfer.setData('text/plain', card.dataset.id); });
+    card.addEventListener('dragend', ()=>card.classList.remove('dragging'));
+  });
+  wrap.querySelectorAll('.board-col').forEach(col=>{
+    col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', ()=>col.classList.remove('dragover'));
+    col.addEventListener('drop', e=>{
+      e.preventDefault(); col.classList.remove('dragover');
+      const id = e.dataTransfer.getData('text/plain');
+      const newStatus = col.dataset.status;
+      const store = loadStore();
+      if(!store[id] || store[id].status === newStatus) return;
+      if(newStatus === 'Approved' && currentUser.role === 'Staff') return;
+      updateReq(id, {status:newStatus});
+      toast(`${id} moved to ${newStatus}`);
+    });
+  });
+}
+
 function openDetail(id){
   const store = loadStore();
   const r = store[id];
@@ -763,6 +965,13 @@ function openDetail(id){
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Deliverables</div><div class="dv" style="font-weight:400;">${escHtml(r.deliverables)||'—'}</div></div>
         ${r.declineReason ? `<div class="dfield" style="margin-bottom:16px;"><div class="dl">Decline Reason</div><div class="dv" style="font-weight:400;color:var(--red);">${escHtml(r.declineReason)}</div></div>` : ''}
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Attachments</div>${attsHtml}</div>
+        <div class="dfield" style="margin-bottom:16px;">
+          <div class="dl">Internal Notes <span style="font-weight:400;text-transform:none;color:var(--faint);">(staff only — not visible to requestor)</span></div>
+          <div class="notes-list" id="notesList">${(r.notes||[]).length ? r.notes.map(n=>`
+            <div class="note-item"><div class="n-meta"><strong style="color:var(--gold-l);">${escHtml(n.author)}</strong><span>${new Date(n.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div><div class="n-text">${escHtml(n.text)}</div></div>
+          `).join('') : '<p style="color:var(--faint);font-size:12.5px;margin:0;">No notes yet.</p>'}</div>
+          <div class="note-add"><textarea id="noteInput" placeholder="Add a note for the team…"></textarea><button type="button" class="btn btn-outline btn-sm" onclick="addNote('${id}')" style="align-self:flex-end;"><i class="ti ti-send"></i></button></div>
+        </div>
         ${canManage && r.status!=='Trash' ? `
         <div class="dfield" style="margin-bottom:8px;"><div class="dl">Assign to Staff</div>
           <select id="assignSelect" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">
@@ -786,13 +995,25 @@ function closeModal(){
 }
 function fmtSize(b){ if(!b) return ''; if(b<1024) return b+' B'; if(b<1024*1024) return (b/1024).toFixed(1)+' KB'; return (b/1024/1024).toFixed(1)+' MB'; }
 
-function updateReq(id, patch){
+function updateReq(id, patch, skipRender){
   const store = loadStore();
   if(!store[id]) return;
   Object.assign(store[id], patch, {lastUpdated:new Date().toISOString()});
   saveStore(store);
   pushSync(store[id]);
-  renderAll();
+  if(!skipRender) renderAll();
+}
+function addNote(id){
+  const input = document.getElementById('noteInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const store = loadStore();
+  if(!store[id]) return;
+  const notes = store[id].notes || [];
+  notes.push({text, author: currentUser.name, ts: new Date().toISOString()});
+  updateReq(id, {notes}, true);
+  toast('Note added','message-circle');
+  openDetail(id);
 }
 function approveReq(id){ updateReq(id,{status:'Approved'}); toast('Request approved'); openDetail(id); }
 function declineReq(id){
@@ -1128,11 +1349,36 @@ function doPost(e){
   const payload = body.payload;
   const result = upsertRow(CONFIG.SHEET_NAME, payload, 'ID');
   if(result.isNew){
-    sendNotificationEmail(payload);
+    // Email-flood guard: always save the request (data integrity first), but skip
+    // sending emails if this same address has already submitted 3+ times in 10 minutes.
+    if(!isEmailFlooding(payload.email)){
+      sendNotificationEmail(payload);
+      sendSubmissionConfirmationEmail(payload);
+    }
   } else if(payload.status === 'Approved' && result.oldStatus !== 'Approved'){
     sendApprovalEmail(payload);
   }
   return jsonOut({ok:true});
+}
+
+/** Returns true if this email has submitted 3 or more requests in the last 10 minutes. */
+function isEmailFlooding(email){
+  if(!email) return false;
+  const sheet = getSheet(CONFIG.SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const jsonIdx = headers.indexOf('Payload JSON');
+  const cutoff = Date.now() - 10*60*1000;
+  let count = 0;
+  for(let i=1; i<data.length; i++){
+    const raw = data[i][jsonIdx];
+    if(!raw) continue;
+    try{
+      const p = JSON.parse(raw);
+      if((p.email||'').toLowerCase() === email.toLowerCase() && new Date(p.ts).getTime() > cutoff) count++;
+    }catch(err){ continue; }
+  }
+  return count >= 3;
 }
 
 function jsonOut(obj){
@@ -1358,6 +1604,33 @@ function sendApprovalEmail(payload){
   MailApp.sendEmail({
     to: payload.email,
     subject: 'Your Request Has Been Approved — ' + payload.id,
+    htmlBody: html
+  });
+}
+
+/** Sends the requestor a "we got it" confirmation the moment they submit. */
+function sendSubmissionConfirmationEmail(payload){
+  if(!payload.email) return;
+  const catLabel = CAT_LABELS_MAIL[payload.cat] || payload.cat || '\u2014';
+
+  const bodyRows =
+    '<tr><td style="padding:14px 32px 4px;"><div style="font-size:14px;color:#33392f;line-height:1.6;">Hi ' + escapeHtml(payload.name || 'there') + ', thanks for your request \u2014 the Artmedia team has received it and will respond within 72 hours.</div></td></tr>' +
+    '<tr><td style="padding:18px 32px 4px;">' +
+      '<table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' +
+        emailRow('Reference', payload.id) +
+        emailRow('Category', catLabel) +
+        emailRow('Type', payload.type || '\u2014') +
+        emailRow('Deadline', payload.deadline || '\u2014') +
+      '</table>' +
+    '</td></tr>' +
+    '<tr><td style="padding:6px 32px 4px;"><div style="font-size:13px;color:#5c6250;line-height:1.6;">Save your Track ID (<strong>' + payload.id + '</strong>) \u2014 you can check live status any time on the Artmedia portal\u2019s Track Request section.</div></td></tr>';
+
+  const html = emailShell('Request Received', escapeHtml(payload.title || 'Your request'), '#c9a84c', bodyRows,
+    'This request will auto-move to Trash if left Pending for more than 72 hours.');
+
+  MailApp.sendEmail({
+    to: payload.email,
+    subject: 'We Have Received Your Request \u2014 ' + payload.id,
     htmlBody: html
   });
 }
