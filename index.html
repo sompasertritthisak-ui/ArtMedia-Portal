@@ -797,11 +797,15 @@ function renderTrack(rec, id, isPoll){
   } else if(rec.status === 'Trash'){
     declinedHtml = `<div class="track-declined"><i class="ti ti-clock-x" style="font-size:20px;flex-shrink:0;"></i><div><strong>This request expired.</strong> It was left Pending for more than 72 hours and was automatically moved to Trash. Please submit a new request if it's still needed.</div></div>`;
   } else {
-    const stageIdx = rec.status === 'Pending' ? 0 : rec.status === 'Approved' ? 1 : rec.status === 'In Progress' ? 2 : rec.status === 'Completed' ? 3 : 0;
+    let doneCount, currentIndex;
+    if(rec.status === 'Pending'){ doneCount = 1; currentIndex = 1; }
+    else if(rec.status === 'Approved' || rec.status === 'In Progress'){ doneCount = 2; currentIndex = 2; }
+    else if(rec.status === 'Completed'){ doneCount = 4; currentIndex = null; }
+    else { doneCount = 0; currentIndex = 0; }
     const labels = ['Submitted','Reviewed','Production','Delivered'];
-    const fillPct = [4, 37, 70, 100][stageIdx];
+    const fillPct = currentIndex===null ? 100 : [4, 37, 70, 100][currentIndex];
     stepsHtml = `<div class="track-steps"><div class="fill-line" style="width:calc(${fillPct}% - ${fillPct===4?'0':'10%'});"></div>` +
-      labels.map((l,i)=>`<div class="t-step ${i<stageIdx?'done':i===stageIdx?'current':''}"><div class="t-dot">${i<stageIdx?'<i class=\"ti ti-check\"></i>':(i+1)}</div><span>${l}</span></div>`).join('') +
+      labels.map((l,i)=>`<div class="t-step ${i<doneCount?'done':i===currentIndex?'current':''}"><div class="t-dot">${i<doneCount?'<i class=\"ti ti-check\"></i>':(i+1)}</div><span>${l}</span></div>`).join('') +
       `</div>`;
   }
 
