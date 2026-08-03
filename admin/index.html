@@ -243,6 +243,10 @@ select option{background:#11151f;color:#f3f2ee;}
 .delivery-file-item i{color:var(--gold-l);}
 .delivery-file-item .dfname{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .delivery-file-item .rm{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;}
+.support-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.support-chip{display:inline-flex;align-items:center;gap:7px;background:var(--emerald-dim);border:1px solid var(--emerald-line);color:var(--emerald-l);padding:5px 6px 5px 12px;border-radius:99px;font-size:12.5px;font-weight:600;}
+.support-chip button{background:none;border:none;color:var(--emerald-l);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;opacity:.7;}
+.support-chip button:hover{opacity:1;background:rgba(255,255,255,.1);}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);}
 
 .toast{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,var(--panel2),var(--panel3));border:1px solid var(--gold-line);color:#fff;padding:15px 22px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;gap:10px;}
@@ -1029,6 +1033,17 @@ function openDetail(id){
           </select>
         </div>
         <button class="btn btn-outline btn-sm" onclick="assignReq('${id}')" style="margin-bottom:6px;"><i class="ti ti-user-check"></i> Save Assignment</button>
+        <div class="dfield" style="margin-top:18px;">
+          <div class="dl">Support Staff <span style="font-weight:400;text-transform:none;color:var(--faint);">(helping out, doesn't count toward their task limit)</span></div>
+          <div class="support-chips" id="supportChips">${(r.supportStaff&&r.supportStaff.length) ? r.supportStaff.map(n=>`<span class="support-chip">${escHtml(n)}<button type="button" onclick="removeSupportStaff('${id}','${escHtml(n).replace(/'/g,"&#39;")}')"><i class="ti ti-x"></i></button></span>`).join('') : '<span style="font-size:12px;color:var(--faint);">No support staff added.</span>'}</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <select id="supportSelect" style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;min-height:40px;background:var(--panel2);color:var(--platinum);">
+              <option value="">Select staff to support…</option>
+              ${STAFF.filter(s=>s.name!==r.assigned && !(r.supportStaff||[]).includes(s.name)).map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="addSupportStaff('${id}')"><i class="ti ti-plus"></i> Add</button>
+          </div>
+        </div>
         <div class="dgrid" style="margin-top:18px;margin-bottom:8px;">
           <div class="dfield"><div class="dl">Reschedule Deadline</div><input type="date" id="rescheduleDeadline" value="${r.deadline||''}" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;min-height:42px;background:var(--panel2);color:var(--platinum);"></div>
           <div class="dfield"><div class="dl">Reschedule Event Date</div><input type="date" id="rescheduleEvdate" value="${r.evdate||''}" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;min-height:42px;background:var(--panel2);color:var(--platinum);"></div>
@@ -1140,7 +1155,38 @@ function sendDelivery(id){
   const store = loadStore();
   const r = store[id];
   if(!r) return;
-  if(!deliveryFiles.length && !note && !confirm('No files or message added — mark this request Completed anyway?')) return;
+  const fileCount = deliveryFiles.length;
+
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend', `
+    <div class="modal-bg" id="confirmDeliveryBg" style="z-index:250;">
+      <div class="modal" id="confirmDeliveryCard" style="max-width:420px;">
+        <div class="modal-head"><h2 style="font-size:19px;">Confirm Delivery</h2><button class="modal-close" onclick="cancelDeliveryConfirm()"><i class="ti ti-x"></i></button></div>
+        <div class="modal-body">
+          <p style="font-size:13.5px;color:var(--mist);line-height:1.6;margin-top:0;">This sends an email to <strong style="color:var(--platinum);">${escHtml(r.email)}</strong> and marks <strong style="color:var(--platinum);">${r.id}</strong> as Completed. This can't be undone from here.</p>
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:13px;">
+            <div style="display:flex;justify-content:space-between;padding:5px 0;"><span style="color:var(--faint);">Files attached</span><strong style="color:var(--platinum);">${fileCount} file${fileCount===1?'':'s'}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;"><span style="color:var(--faint);">Message</span><strong style="color:var(--platinum);">${note ? 'Included' : 'None'}</strong></div>
+          </div>
+          <div class="modal-actions" style="margin-top:0;padding-top:0;border-top:none;">
+            <button class="btn btn-outline" onclick="cancelDeliveryConfirm()">Cancel</button>
+            <button class="btn btn-gold" onclick="performDelivery('${id}')"><i class="ti ti-send"></i> Confirm &amp; Send</button>
+          </div>
+        </div>
+      </div>
+    </div>`);
+  gsap.fromTo('#confirmDeliveryBg', {opacity:0}, {opacity:1, duration:.2});
+  gsap.fromTo('#confirmDeliveryCard', {opacity:0,y:16,scale:.96}, {opacity:1,y:0,scale:1,duration:.3,ease:'power3.out'});
+}
+function cancelDeliveryConfirm(){
+  const el = document.getElementById('confirmDeliveryBg');
+  if(el) el.remove();
+}
+function performDelivery(id){
+  cancelDeliveryConfirm();
+  const note = document.getElementById('deliveryNote').value.trim();
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
   const existing = r.deliveryFiles || [];
   Object.assign(r, {
     status: 'Completed',
@@ -1166,6 +1212,28 @@ function declineReq(id){
   openDetail(id);
 }
 function completeReq(id){ updateReq(id,{status:'Completed'}); toast('Marked complete'); openDetail(id); }
+function addSupportStaff(id){
+  const sel = document.getElementById('supportSelect');
+  const name = sel.value;
+  if(!name) return;
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
+  const list = r.supportStaff || [];
+  if(!list.includes(name)) list.push(name);
+  updateReq(id, {supportStaff: list}, true);
+  toast(`${name} added as support`,'user-plus');
+  openDetail(id);
+}
+function removeSupportStaff(id, name){
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
+  const list = (r.supportStaff||[]).filter(n=>n!==name);
+  updateReq(id, {supportStaff: list}, true);
+  toast(`${name} removed from support`,'user-minus');
+  openDetail(id);
+}
 function assignReq(id){
   const val = document.getElementById('assignSelect').value;
   const store = loadStore();
