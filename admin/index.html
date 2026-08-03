@@ -190,6 +190,7 @@ select option{background:#11151f;color:#f3f2ee;}
 .staff-card .role{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
 .staff-card .tasks{font-family:var(--serif);font-size:21px;font-weight:600;color:var(--gold-l);}
 .staff-card .status-lbl{font-size:11px;font-weight:700;margin:5px 0 12px;}
+.support-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--emerald-l);background:var(--emerald-dim);border:1px solid var(--emerald-line);padding:3px 10px;border-radius:99px;margin-bottom:6px;}
 .staff-card .bar-track{height:7px;}
 
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
@@ -208,6 +209,13 @@ select option{background:#11151f;color:#f3f2ee;}
 .cal-event.st-Approved{background:var(--greenbg);color:var(--green);}
 .cal-event.st-Progress,.cal-event.st-In\ Progress{background:var(--bluebg);color:var(--blue);}
 .cal-event.st-Completed{background:rgba(255,255,255,.07);color:var(--mist);}
+.cal-event{border-left:3px solid transparent;display:flex;align-items:center;gap:4px;}
+.cal-event i{font-size:11px;flex-shrink:0;}
+.cal-event.kind-deadline{border-left-color:var(--gold);}
+.cal-event.kind-event{border-left-color:var(--emerald-l);}
+.cal-event.kind-both{border-left-color:var(--gold);border-image:linear-gradient(180deg,var(--gold),var(--emerald-l)) 1;}
+.cal-legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:11.5px;color:var(--faint);}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px;}
 
 .modal-bg{position:fixed;inset:0;background:rgba(4,5,9,.72);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--gold-line);border-radius:var(--radius-lg);max-width:740px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.6);}
@@ -325,6 +333,10 @@ select,input[type=text],input[type=date]{min-height:44px;}
           <h3>Staff Workload</h3>
           <div id="dashWorkload"></div>
         </div>
+        <div class="card">
+          <h3>Upcoming Deadlines</h3>
+          <div class="table-wrap"><table id="deadlinesTable"><thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Deadline</th><th>Assigned</th></tr></thead><tbody></tbody></table></div>
+        </div>
       </section>
 
       <!-- REQUESTS -->
@@ -332,6 +344,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="view-title"><div><h1>Requests</h1><p>All submitted media requests</p></div></div>
         <div class="filters">
           <input type="text" id="fSearch" placeholder="Search ID, title, requestor, email…" style="min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:0 14px;font-size:13px;background:var(--panel2);color:var(--platinum);flex:1;min-width:220px;">
+          <button type="button" class="vt-btn" id="fMineBtn" style="border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);"><i class="ti ti-user-circle"></i> My Requests</button>
           <select id="fStatus"><option value="">All Status</option><option>Pending</option><option>Approved</option><option>In Progress</option><option>Declined</option><option>Completed</option></select>
           <select id="fCat"><option value="">All Categories</option><option value="event">Event Coverage</option><option value="design">Design & Print</option><option value="digital">Digital & Web</option><option value="marketing">Marketing & Branding</option><option value="editing">Photo & Video Editing</option></select>
           <select id="fType"><option value="">All Types</option></select>
@@ -366,7 +379,8 @@ select,input[type=text],input[type=date]{min-height:44px;}
             <h3 id="staffCalTitle">Calendar</h3>
             <div class="cal-nav"><button id="staffCalPrev"><i class="ti ti-chevron-left"></i></button><span id="staffCalMonth" style="align-self:center;font-weight:700;min-width:130px;text-align:center;"></span><button id="staffCalNext"><i class="ti ti-chevron-right"></i></button></div>
           </div>
-          <div class="cal-grid" id="staffCalGrid"></div>
+          <div class="cal-legend"><span><i class="ti ti-flag-3" style="color:var(--gold);"></i> Deadline</span><span><i class="ti ti-camera" style="color:var(--emerald-l);"></i> Event Date</span><span><i class="ti ti-calendar-star"></i> Both same day</span></div>
+        <div class="cal-grid" id="staffCalGrid"></div>
         </div>
       </section>
 
@@ -378,7 +392,8 @@ select,input[type=text],input[type=date]{min-height:44px;}
             <h3 id="prodCalTitleTop">All Tasks</h3>
             <div class="cal-nav"><button id="prodCalPrev"><i class="ti ti-chevron-left"></i></button><span id="prodCalMonth" style="align-self:center;font-weight:700;min-width:130px;text-align:center;"></span><button id="prodCalNext"><i class="ti ti-chevron-right"></i></button></div>
           </div>
-          <div class="cal-grid" id="prodCalGrid"></div>
+          <div class="cal-legend"><span><i class="ti ti-flag-3" style="color:var(--gold);"></i> Deadline</span><span><i class="ti ti-camera" style="color:var(--emerald-l);"></i> Event Date</span><span><i class="ti ti-calendar-star"></i> Both same day</span></div>
+        <div class="cal-grid" id="prodCalGrid"></div>
         </div>
       </section>
 
@@ -395,6 +410,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="card"><h3>By Type</h3><div id="anaType"></div></div>
         <div class="card"><h3>By Status</h3><div id="anaStatus"></div></div>
         <div class="card"><h3>By Category</h3><div id="anaCat"></div></div>
+        <div class="card"><h3>Staff Performance</h3><div id="anaStaff"></div></div>
         <div class="card"><h3>Sheets Sync Log</h3><div id="anaSync" style="font-size:13px;color:var(--faint);">Set <code>WEB_APP_URL</code> in <strong>both</strong> pbis-portal.html and pbis-admin.html to activate: live Google Sheets storage, cross-device sync (polls every 25s), attachment backup to Drive, and an email notification to artmedia@pbis.edu.la on every new request. See the Apps Script modal for the full setup script and instructions.</div></div>
       </section>
 
@@ -769,6 +785,7 @@ function renderDashboard(){
   let alerts = '';
   if(pending>0) alerts += `<div class="alert-banner alert-amber"><i class="ti ti-bell-ringing"></i> ${pending} request${pending===1?'':'s'} awaiting review.</div>`;
   if(trashCount>0) alerts += `<div class="alert-banner alert-red"><i class="ti ti-alert-triangle"></i> ${trashCount} request${trashCount===1?'':'s'} in Trash Bin — review before permanent deletion.</div>`;
+  alerts += buildSupportAlert();
   document.getElementById('dashAlerts').innerHTML = alerts;
 
   const recent = reqs.slice(0,8);
@@ -783,7 +800,43 @@ function renderDashboard(){
     return `<div class="bar-row"><div class="bl">${s.name}</div><div class="bar-track"><div class="bar-fill ${pct>=100?'over':''}" data-pct="${pct}" style="width:0"></div></div><div class="bar-val">${c}/${TASK_LIMIT}</div></div>`;
   }).join('');
   requestAnimationFrame(()=>document.querySelectorAll('#dashWorkload .bar-fill').forEach(el=>el.style.width = el.dataset.pct+'%'));
+
+  const upcoming = reqs.filter(r=>r.deadline && r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash')
+    .sort((a,b)=> new Date(a.deadline) - new Date(b.deadline)).slice(0,8);
+  document.querySelector('#deadlinesTable tbody').innerHTML = upcoming.map(r=>{
+    const daysLeft = Math.ceil((new Date(r.deadline) - new Date()) / 864e5);
+    const urgent = daysLeft <= 2;
+    return `<tr class="rowhover" onclick="openDetail('${r.id}')">
+      <td><strong>${r.id}</strong></td><td>${escHtml(r.title)}</td><td>${statusBadge(r.status)}</td>
+      <td><span style="${urgent?'color:var(--red);font-weight:700;':''}">${r.deadline}${urgent?' ('+(daysLeft<0?'overdue':daysLeft+'d')+')':''}</span></td>
+      <td>${r.assigned || '<span style="color:var(--faint);">Unassigned</span>'}</td>
+    </tr>`;
+  }).join('') || emptyRow(5);
 }
+/** Surfaces a dismissible banner when the logged-in staff member has been newly added
+ *  as support on any request. Tracks "seen" IDs per-user in localStorage since this
+ *  system has no per-person push channel. */
+function buildSupportAlert(){
+  const mine = allRequests().filter(r => (r.supportStaff||[]).includes(currentUser.name) && r.status!=='Trash' && r.status!=='Declined' && r.status!=='Completed');
+  if(!mine.length) return '';
+  const seenKey = 'pbis-support-seen-' + currentUser.username;
+  let seen = [];
+  try{ seen = JSON.parse(localStorage.getItem(seenKey)) || []; }catch(e){}
+  const unseen = mine.filter(r => !seen.includes(r.id));
+  if(!unseen.length) return '';
+  const ids = unseen.map(r=>r.id).join(', ');
+  return `<div class="alert-banner" style="background:var(--emerald-dim);border-color:var(--emerald-line);color:var(--emerald-l);">
+    <i class="ti ti-users"></i> You've been added as support on: <strong>${ids}</strong>
+    <button type="button" onclick="dismissSupportAlert()" style="margin-left:auto;background:none;border:1px solid var(--emerald-line);border-radius:8px;color:var(--emerald-l);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">Got it</button>
+  </div>`;
+}
+function dismissSupportAlert(){
+  const mine = allRequests().filter(r => (r.supportStaff||[]).includes(currentUser.name));
+  const seenKey = 'pbis-support-seen-' + currentUser.username;
+  localStorage.setItem(seenKey, JSON.stringify(mine.map(r=>r.id)));
+  renderAll();
+}
+
 function stat(icon,color,bg,val,lbl){
   return `<div class="stat-card"><div class="ic" style="background:${bg};color:${color};"><i class="ti ${icon}"></i></div><div class="val" data-target="${val}">0</div><div class="lbl">${lbl}</div></div>`;
 }
@@ -812,6 +865,12 @@ document.getElementById('fSearch').addEventListener('input', ()=>{ clearTimeout(
 
 let selectedIds = new Set();
 let viewMode = 'table';
+let mineOnly = false;
+document.getElementById('fMineBtn').addEventListener('click', function(){
+  mineOnly = !mineOnly;
+  this.classList.toggle('active', mineOnly);
+  renderRequests();
+});
 
 document.getElementById('vtTable').addEventListener('click', ()=>setViewMode('table'));
 document.getElementById('vtBoard').addEventListener('click', ()=>setViewMode('board'));
@@ -839,6 +898,7 @@ function filteredRequests(){
     (r.name||'').toLowerCase().includes(fq) ||
     (r.email||'').toLowerCase().includes(fq)
   );
+  if(mineOnly) reqs = reqs.filter(r => r.assigned===currentUser.name || (r.supportStaff||[]).includes(currentUser.name));
   return reqs;
 }
 
@@ -997,7 +1057,7 @@ function openDetail(id){
   document.getElementById('modalRoot').innerHTML = `
   <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
     <div class="modal" id="modalCard">
-      <div class="modal-head"><h2>${r.id} — ${escHtml(r.title)}</h2><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div>
+      <div class="modal-head"><h2>${r.id} — ${escHtml(r.title)}</h2><div style="display:flex;gap:8px;align-items:center;"><button class="modal-close" onclick="printBrief('${id}')" title="Print / Save as PDF" style="width:40px;"><i class="ti ti-printer"></i></button><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div></div>
       <div class="modal-body">
         ${buildStageTrack(r)}
         ${r.status==='Pending' ? `<div style="margin-bottom:18px;">${countdownPill(r)} <span style="font-size:12px;color:var(--faint);">until auto-trash</span></div>` : ''}
@@ -1069,6 +1129,64 @@ function openDetail(id){
   gsap.fromTo('#modalCard', {opacity:0,y:24,scale:.97}, {opacity:1,y:0,scale:1,duration:.4,ease:'power3.out'});
   initDeliveryDrop();
 }
+/** Opens a clean, light, print-ready brief for a single request in a new window and
+ *  triggers the browser's print dialog — "Save as PDF" from there covers the PDF need
+ *  without pulling in a PDF-generation library. */
+function printBrief(id){
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
+  const logoSrc = document.querySelector('.sb-brand img')?.src || '';
+  const catLabel = (CAT_LABELS[r.cat] || r.cat || '—');
+  const row = (label, val) => val ? `<tr><td class="pl">${label}</td><td class="pv">${escHtml(String(val))}</td></tr>` : '';
+  const attsHtml = (r.atts||[]).length
+    ? (r.atts||[]).map(a=>`<div>${escHtml(a.name)}</div>`).join('')
+    : '<div style="color:#888;">None</div>';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${r.id} Brief</title>
+  <style>
+    body{font-family:Georgia,serif;color:#14231d;background:#fff;padding:40px;max-width:720px;margin:0 auto;}
+    .head{display:flex;align-items:center;gap:16px;border-bottom:3px solid #c9a84c;padding-bottom:18px;margin-bottom:24px;}
+    .head img{height:56px;}
+    .head h1{font-size:22px;margin:0;}
+    .head .sub{color:#666;font-size:13px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+    .pl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#888;padding:8px 12px 8px 0;width:160px;vertical-align:top;border-bottom:1px solid #eee;}
+    .pv{font-size:14px;font-weight:600;padding:8px 0;border-bottom:1px solid #eee;}
+    .section-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:22px 0 6px;}
+    .badge{display:inline-block;padding:4px 12px;border-radius:99px;background:#0a3b2e;color:#fff;font-size:11px;font-weight:700;}
+    @media print{ body{padding:20px;} }
+  </style></head>
+  <body>
+    <div class="head">${logoSrc?`<img src="${logoSrc}">`:''}<div><h1>${escHtml(r.title)}</h1><div class="sub">PBIS Artmedia — Production Brief</div></div></div>
+    <span class="badge">${r.id}</span> &nbsp; <span class="badge" style="background:#c9a84c;color:#12100a;">${escHtml(r.status)}</span>
+    <table style="margin-top:20px;">
+      ${row('Category', catLabel)}
+      ${row('Type', TYPE_LABELS[r.type]||r.type)}
+      ${row('Priority', (r.priority||'standard').toUpperCase())}
+      ${row('Requestor', r.name)}
+      ${row('Department', r.dept)}
+      ${row('Assigned To', r.assigned)}
+      ${row('Support Staff', (r.supportStaff||[]).join(', '))}
+      ${row('Event Date', r.evdate)}
+      ${row('Deadline', r.deadline)}
+      ${row('Location', r.location)}
+    </table>
+    <div class="section-h">Description</div>
+    <div>${escHtml(r.desc)||'—'}</div>
+    <div class="section-h">Deliverables</div>
+    <div>${escHtml(r.deliverables)||'—'}</div>
+    <div class="section-h">Reference Attachments</div>
+    ${attsHtml}
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ alert('Please allow pop-ups to print a brief.'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.onload = () => w.print();
+}
+
 function closeModal(){
   const bg = document.getElementById('modalBg');
   if(!bg){ document.getElementById('modalRoot').innerHTML=''; return; }
@@ -1256,16 +1374,21 @@ function permDelete(id){
    ============================================================ */
 function renderStaffGrid(){
   const reqs = allRequests();
-  const staffCount = {};
-  reqs.forEach(r=>{ if(r.assigned && r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'){ staffCount[r.assigned]=(staffCount[r.assigned]||0)+1; } });
+  const staffCount = {}, supportCount = {};
+  reqs.forEach(r=>{
+    if(r.assigned && r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'){ staffCount[r.assigned]=(staffCount[r.assigned]||0)+1; }
+    if(r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'){ (r.supportStaff||[]).forEach(n=>{ supportCount[n]=(supportCount[n]||0)+1; }); }
+  });
 
   document.getElementById('staffGrid').innerHTML = STAFF.map(s=>{
     const c = staffCount[s.name]||0; const pct = Math.min(100, Math.round(c/TASK_LIMIT*100));
+    const sup = supportCount[s.name]||0;
     const status = c>=TASK_LIMIT ? 'At Capacity' : c>=7 ? 'Nearly Full' : c>0 ? 'Active' : 'Available';
     const color = c>=TASK_LIMIT ? 'var(--red)' : c>=7 ? 'var(--amber)' : 'var(--green)';
     return `<div class="staff-card ${selectedStaff===s.name?'active':''}" data-staff="${s.name}">
       <div class="av">${initials(s.name)}</div><h4>${s.name}</h4><div class="role">Artmedia</div>
       <div class="tasks">${c} / ${TASK_LIMIT} Tasks</div>
+      ${sup ? `<div class="support-badge"><i class="ti ti-users"></i> Supporting ${sup}</div>` : ''}
       <div class="status-lbl" style="color:${color};">${status}</div>
       <div class="bar-track"><div class="bar-fill ${pct>=100?'over':''}" data-pct="${pct}" style="width:0"></div></div>
     </div>`;
@@ -1293,29 +1416,41 @@ function selectStaff(name){
 document.getElementById('staffCalPrev').addEventListener('click', ()=>{ staffCalDate.setMonth(staffCalDate.getMonth()-1); renderStaffCalendar(); });
 document.getElementById('staffCalNext').addEventListener('click', ()=>{ staffCalDate.setMonth(staffCalDate.getMonth()+1); renderStaffCalendar(); });
 
-function buildCalendarCells(date, filterFn){
+function buildCalendarCells(date, filterFn, viewerName){
   const year = date.getFullYear(), month = date.getMonth();
   const first = new Date(year, month, 1);
   const startDow = first.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const reqs = allRequests().filter(r=>r.status!=='Trash').filter(filterFn);
   const byDay = {};
-  reqs.forEach(r=>{
-    const d = r.deadline || r.evdate;
-    if(!d) return;
-    const dt = new Date(d);
+  const addEntry = (dateStr, r, kind) => {
+    if(!dateStr) return;
+    const dt = new Date(dateStr);
     if(dt.getFullYear()===year && dt.getMonth()===month){
-      const day = dt.getDate();
-      (byDay[day] = byDay[day]||[]).push(r);
+      (byDay[dt.getDate()] = byDay[dt.getDate()]||[]).push({r, kind});
     }
+  };
+  reqs.forEach(r=>{
+    const sameDay = r.deadline && r.evdate && r.deadline === r.evdate;
+    if(sameDay){ addEntry(r.deadline, r, 'both'); }
+    else { addEntry(r.deadline, r, 'deadline'); addEntry(r.evdate, r, 'event'); }
   });
+  const KIND_META = {
+    deadline: {icon:'ti-flag-3', cls:'kind-deadline', label:'Deadline'},
+    event:    {icon:'ti-camera', cls:'kind-event', label:'Event'},
+    both:     {icon:'ti-calendar-star', cls:'kind-both', label:'Event + Deadline'}
+  };
   let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<startDow;i++) html += `<div class="cal-cell empty"></div>`;
   for(let day=1; day<=daysInMonth; day++){
     const events = byDay[day] || [];
     html += `<div class="cal-cell"><div class="dnum">${day}</div>`;
     if(!events.length){ html += `<div class="none">No tasks</div>`; }
-    else { events.forEach(r=>{ html += `<div class="cal-event st-${r.status.replace(' ','\\ ')}" onclick="openDetail('${r.id}')" title="${escHtml(r.title)}">${r.atts&&r.atts.length?'<i class="ti ti-paperclip"></i> ':''}${escHtml(r.title)}</div>`; }); }
+    else { events.forEach(({r,kind})=>{
+      const isSupportOnly = viewerName && r.assigned!==viewerName && (r.supportStaff||[]).includes(viewerName);
+      const meta = KIND_META[kind];
+      html += `<div class="cal-event st-${r.status.replace(' ','\\ ')} ${meta.cls}" onclick="openDetail('${r.id}')" title="${meta.label}: ${escHtml(r.title)}"><i class="ti ${meta.icon}"></i> ${isSupportOnly?'<i class="ti ti-users"></i> ':''}${r.atts&&r.atts.length?'<i class="ti ti-paperclip"></i> ':''}${escHtml(r.title)}</div>`;
+    }); }
     html += `</div>`;
   }
   return html;
@@ -1323,7 +1458,7 @@ function buildCalendarCells(date, filterFn){
 function renderStaffCalendar(){
   document.getElementById('staffCalMonth').textContent = staffCalDate.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   const grid = document.getElementById('staffCalGrid');
-  grid.innerHTML = buildCalendarCells(staffCalDate, r=>r.assigned===selectedStaff);
+  grid.innerHTML = buildCalendarCells(staffCalDate, r=>r.assigned===selectedStaff || (r.supportStaff||[]).includes(selectedStaff), selectedStaff);
   gsap.fromTo(grid, {opacity:0}, {opacity:1, duration:.3});
 }
 
@@ -1369,6 +1504,23 @@ function renderAnalytics(){
   renderBarGroup('anaType', groupCount(reqs,'type', TYPE_LABELS));
   renderBarGroup('anaStatus', groupCount(reqs,'status'));
   renderBarGroup('anaCat', groupCount(reqs,'cat', CAT_LABELS));
+  renderStaffPerformance(reqs);
+}
+function renderStaffPerformance(reqs){
+  const completed = reqs.filter(r=>r.status==='Completed');
+  const rows = STAFF.map(s=>{
+    const mine = completed.filter(r=>r.assigned===s.name);
+    if(!mine.length) return {name:s.name, count:0, avgDays:0};
+    const totalDays = mine.reduce((sum,r)=>{
+      const start = new Date(r.ts), end = new Date(r.lastUpdated||r.ts);
+      return sum + Math.max(0,(end-start)/864e5);
+    },0);
+    return {name:s.name, count:mine.length, avgDays: (totalDays/mine.length).toFixed(1)};
+  }).sort((a,b)=>b.count-a.count);
+  const max = Math.max(1, ...rows.map(r=>r.count));
+  document.getElementById('anaStaff').innerHTML = rows.map(r=>`
+    <div class="bar-row"><div class="bl">${r.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(r.count/max*100)}%"></div></div><div class="bar-val">${r.count} · ${r.avgDays}d avg</div></div>
+  `).join('');
 }
 function groupCount(reqs, key, labelMap){
   const counts = {};
@@ -1539,12 +1691,16 @@ function doGet(e){
       let payload;
       try{ payload = JSON.parse(raw); }catch(err){ continue; }
       if((payload.id||'').toUpperCase() === id && (payload.email||'').toLowerCase().trim() === email){
-        // Return only what the public tracker needs — no phone, no internal assignment name.
+        // Return only what the public tracker needs — no phone, no internal assignment name,
+        // and only notes the requestor themselves sent (never internal staff-only notes).
         return jsonOut({found:true, request:{
           id: payload.id, title: payload.title, cat: payload.cat, type: payload.type,
           priority: payload.priority, status: payload.status, deadline: payload.deadline,
           evdate: payload.evdate, date: payload.date, ts: payload.ts,
-          declineReason: payload.declineReason || null, trashed: !!payload.trashed
+          declineReason: payload.declineReason || null, trashed: !!payload.trashed,
+          deliveryFiles: payload.status === 'Completed' ? (payload.deliveryFiles||[]) : [],
+          deliveryNote: payload.status === 'Completed' ? (payload.deliveryNote||'') : '',
+          notes: (payload.notes||[]).filter(function(n){ return n.fromRequestor; })
         }});
       }
     }
@@ -1560,6 +1716,13 @@ function doPost(e){
   if(action === 'delete'){
     deleteRow(CONFIG.SHEET_NAME, body.id, 'ID');
     return jsonOut({ok:true});
+  }
+
+  if(action === 'addNote'){
+    // Requestor-sent message. Requires the same id+email proof as track lookups so a stray
+    // ID can't be used to post notes onto someone else's request.
+    const ok = addRequestorNote((body.id||'').trim().toUpperCase(), (body.email||'').trim().toLowerCase(), (body.text||'').trim());
+    return jsonOut({ok: ok});
   }
 
   const payload = body.payload;
@@ -1697,6 +1860,28 @@ function upsertRow(sheetName, payload, keyCol){
   sheet.getRange(rowIdx,1,1,row.length).setHorizontalAlignment('center').setVerticalAlignment('middle');
   colorRow(sheet, rowIdx, payload.status);
   return {isNew: isNew, oldStatus: oldStatus, oldDeadline: oldDeadline, oldEvdate: oldEvdate};
+}
+
+/** Verifies id+email match, then appends a requestor-authored note and re-saves via upsertRow. */
+function addRequestorNote(id, email, text){
+  if(!id || !email || !text) return false;
+  const sheet = getSheet(CONFIG.SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const keyIdx = headers.indexOf('ID');
+  const jsonIdx = headers.indexOf('Payload JSON');
+  for(let i=1; i<data.length; i++){
+    if((data[i][keyIdx]||'').toString().toUpperCase() !== id) continue;
+    let payload;
+    try{ payload = JSON.parse(data[i][jsonIdx]); }catch(err){ return false; }
+    if((payload.email||'').toLowerCase().trim() !== email) return false;
+    const notes = payload.notes || [];
+    notes.push({text: text, author: payload.name || 'Requestor', ts: new Date().toISOString(), fromRequestor: true});
+    payload.notes = notes;
+    upsertRow(CONFIG.SHEET_NAME, payload, 'ID');
+    return true;
+  }
+  return false;
 }
 
 function deleteRow(sheetName, id, keyCol){
