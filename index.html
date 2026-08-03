@@ -201,6 +201,19 @@ img,svg{display:block;}
 .track-empty,.track-error{text-align:center;padding:20px 0;color:var(--faint);font-size:13.5px;}
 .track-error{color:#fca5a5;}
 
+.track-ics-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid var(--gold-line);border-radius:99px;padding:8px 16px;font-size:12.5px;font-weight:600;color:var(--gold-l);cursor:none;transition:all .2s var(--ease);margin-bottom:20px;}
+.track-ics-btn:hover{background:var(--gold-dim);border-color:var(--gold);}
+.track-delivery{background:var(--emerald-dim);border:1px solid var(--emerald-line);border-radius:var(--radius);padding:18px 20px;margin-bottom:24px;}
+.track-file-link{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--emerald-line);border-radius:var(--radius-sm);margin-bottom:8px;font-size:13px;font-weight:600;color:var(--emerald-l);transition:all .2s var(--ease);cursor:none;}
+.track-file-link:hover{background:rgba(255,255,255,.05);}
+.track-file-link:last-of-type{margin-bottom:0;}
+.track-messages{margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08);}
+.track-msg{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:8px;font-size:13px;color:var(--platinum);}
+.track-msg .tm-meta{font-size:10.5px;color:var(--faint);margin-bottom:4px;}
+.track-msg-form{display:flex;gap:10px;margin-top:10px;align-items:flex-end;}
+.track-msg-form textarea{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:10px 14px;background:rgba(255,255,255,.03);color:var(--platinum);font-family:inherit;font-size:13px;resize:vertical;}
+.track-msg-form textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-dim);}
+
 .section-title{display:flex;align-items:center;gap:11px;margin:0 0 20px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--gold-l);}
 .section-title .num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--gold);}
 .formsec{margin-bottom:38px;}
@@ -815,6 +828,20 @@ function renderTrack(rec, id, isPoll){
     countdownHtml = `<div class="track-countdown ${t.urgent?'urgent':''}"><i class="ti ti-clock"></i> ${t.h}h ${t.m}m until auto-review window closes</div>`;
   }
 
+  let deliveryHtml = '';
+  if(rec.status === 'Completed' && rec.deliveryFiles && rec.deliveryFiles.length){
+    deliveryHtml = `<div class="track-delivery">
+      <div class="tm-label" style="margin-bottom:10px;"><i class="ti ti-package"></i> Final Deliverables</div>
+      ${rec.deliveryFiles.map(f=>`<a class="track-file-link" href="${f.url}" ${f.url.indexOf('data:')===0?`download="${escHtml(f.name)}"`:'target="_blank" rel="noopener"'}><i class="ti ti-download"></i> ${escHtml(f.name)}</a>`).join('')}
+      ${rec.deliveryNote ? `<p style="margin:10px 0 0;font-size:13px;color:var(--mist);">${escHtml(rec.deliveryNote)}</p>` : ''}
+    </div>`;
+  }
+
+  const icsBtn = rec.evdate ? `<button type="button" class="track-ics-btn" id="icsBtn"><i class="ti ti-calendar-plus"></i> Add Event to Calendar</button>` : '';
+
+  const notes = (rec.notes||[]).filter(n=>n.fromRequestor);
+  const notesHtml = notes.length ? notes.map(n=>`<div class="track-msg"><div class="tm-meta">${new Date(n.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div>${escHtml(n.text)}</div></div>`).join('') : '';
+
   resultEl.innerHTML = `
     <div class="track-result-head">
       <div>
@@ -829,20 +856,67 @@ function renderTrack(rec, id, isPoll){
     ${declinedHtml}
     ${stepsHtml}
     ${countdownHtml}
+    ${icsBtn}
+    ${deliveryHtml}
     <div class="track-meta">
       <div><div class="tm-label">Category</div><div class="tm-val">${catLabel}</div></div>
       <div><div class="tm-label">Submitted</div><div class="tm-val">${rec.date || '—'}</div></div>
       <div><div class="tm-label">Deadline</div><div class="tm-val">${rec.deadline || '—'}</div></div>
       <div><div class="tm-label">Priority</div><div class="tm-val">${(rec.priority||'standard').toUpperCase()}</div></div>
+    </div>
+    <div class="track-messages">
+      <div class="tm-label" style="margin-bottom:10px;"><i class="ti ti-message-circle"></i> Message the Team</div>
+      <div id="trackMsgList">${notesHtml}</div>
+      <div class="track-msg-form">
+        <textarea id="trackMsgInput" placeholder="Ask a question or add info for the Artmedia team…"></textarea>
+        <button type="button" class="btn btn-outline btn-sm" id="trackMsgBtn"><i class="ti ti-send"></i> Send</button>
+      </div>
     </div>`;
 
   document.getElementById('trackRefreshBtn').addEventListener('click', function(){
     this.classList.add('spin');
     performTrack(id, lastTrackQuery.email, true).then(()=>{ this.classList.remove('spin'); });
   });
+  const icsEl = document.getElementById('icsBtn');
+  if(icsEl) icsEl.addEventListener('click', ()=>downloadIcs(rec));
+  document.getElementById('trackMsgBtn').addEventListener('click', ()=>sendTrackMessage(id, lastTrackQuery.email));
 
   if(!isPoll) startTrackPoll(id, lastTrackQuery.email);
   else document.getElementById('trackRefreshedAt').textContent = 'Updated just now';
+}
+
+function downloadIcs(rec){
+  const dt = (rec.evdate||'').replace(/-/g,'');
+  if(!dt) return;
+  const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PBIS Artmedia//Track Request//EN','BEGIN:VEVENT',
+    'UID:' + rec.id + '@pbis-artmedia',
+    'DTSTART;VALUE=DATE:' + dt,
+    'DTEND;VALUE=DATE:' + dt,
+    'SUMMARY:' + (rec.title||'PBIS Artmedia Request').replace(/[\r\n]/g,' '),
+    'DESCRIPTION:Track ID ' + rec.id + ' — PBIS Artmedia',
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = rec.id + '.ics'; a.click();
+}
+
+function sendTrackMessage(id, email){
+  const input = document.getElementById('trackMsgInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const btn = document.getElementById('trackMsgBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sending…';
+  if(WEB_APP_URL){
+    fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'addNote', id, email, text})}).catch(()=>{});
+  }
+  setTimeout(()=>{
+    const list = document.getElementById('trackMsgList');
+    list.insertAdjacentHTML('beforeend', `<div class="track-msg"><div class="tm-meta">Just now</div><div>${escHtml(text)}</div></div>`);
+    input.value = '';
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Send';
+  }, 500);
 }
 
 function startTrackPoll(id, email){
