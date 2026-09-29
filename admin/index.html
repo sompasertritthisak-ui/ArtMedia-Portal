@@ -1375,6 +1375,11 @@ function permDelete(id){
 /* ============================================================
    STAFF TASKS VIEW
    ============================================================ */
+/** People who hold elevated/non-creative accounts (Super Admin, Manager) and shouldn't
+ *  appear as assignable creative staff on the Staff Tasks tab specifically. They're
+ *  untouched everywhere else — assignment dropdowns, calendars, analytics, etc. */
+const STAFF_TAB_HIDDEN = ['Top','Lane','Tophy','Yos'];
+
 function renderStaffGrid(){
   const reqs = allRequests();
   const staffCount = {}, supportCount = {};
@@ -1382,8 +1387,9 @@ function renderStaffGrid(){
     if(r.assigned && r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'){ staffCount[r.assigned]=(staffCount[r.assigned]||0)+1; }
     if(r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'){ (r.supportStaff||[]).forEach(n=>{ supportCount[n]=(supportCount[n]||0)+1; }); }
   });
+  const visibleStaff = STAFF.filter(s=>!STAFF_TAB_HIDDEN.includes(s.name));
 
-  document.getElementById('staffGrid').innerHTML = STAFF.map(s=>{
+  document.getElementById('staffGrid').innerHTML = visibleStaff.map(s=>{
     const c = staffCount[s.name]||0; const pct = Math.min(100, Math.round(c/TASK_LIMIT*100));
     const sup = supportCount[s.name]||0;
     const status = c>=TASK_LIMIT ? 'At Capacity' : c>=7 ? 'Nearly Full' : c>0 ? 'Active' : 'Available';
@@ -1398,7 +1404,7 @@ function renderStaffGrid(){
   }).join('');
   requestAnimationFrame(()=>document.querySelectorAll('#staffGrid .bar-fill').forEach(el=>el.style.width = el.dataset.pct+'%'));
 
-  document.getElementById('staffQuickSelect').innerHTML = '<option value="">Quick select staff…</option>' + STAFF.map(s=>`<option value="${s.name}" ${selectedStaff===s.name?'selected':''}>${s.name}</option>`).join('');
+  document.getElementById('staffQuickSelect').innerHTML = '<option value="">Quick select staff…</option>' + visibleStaff.map(s=>`<option value="${s.name}" ${selectedStaff===s.name?'selected':''}>${s.name}</option>`).join('');
 
   document.querySelectorAll('.staff-card').forEach(card=>card.addEventListener('click', ()=>selectStaff(card.dataset.staff)));
   document.getElementById('staffQuickSelect').onchange = e=>selectStaff(e.target.value);
