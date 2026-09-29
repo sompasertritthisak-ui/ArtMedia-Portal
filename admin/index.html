@@ -2624,7 +2624,8 @@ function showAppsScriptModal(){
 const CONFIG = {
   SPREADSHEET_ID: '1WafEV6xSyzNTZ0ulRNGcgi0ZjZWJnSQnVi7DnugXVV8', // your PBIS Artmedia sheet
   SHEET_NAME: 'Requests',
-  EMAIL_TO: 'artmedia@pbis.edu.la',       // team notification recipients — comma-separate for several (e.g. 'artmedia@pbis.edu.la, top@pbis.edu.la')
+  EMAIL_TO: 'artmedia@pbis.edu.la,marketing-events@pbis.edu.la', // team notification recipients (comma-separated, no spaces)
+  CONTACT_EMAIL: 'artmedia@pbis.edu.la', // the single public-facing address shown to requestors
   DRIVE_FOLDER_ID: '',                     // optional: paste a Drive folder ID to store attachments there
   ADMIN_URL: 'https://sompasertritthisak-ui.github.io/ArtMedia-Portal/admin/', // shown as a button in the email
   BRAND: 'PBIS Artmedia',
@@ -3286,7 +3287,7 @@ function emailShell(eyebrow, heading, accentColor, bodyRowsHtml, footerNote){
           'Automated message from the official PBIS Artmedia Request Portal, sent because a media request was submitted using your email address. ' +
           'All media produced by PBIS Artmedia remains the intellectual property of Panyathip British International School.<br><br>' +
           '<span style="color:' + MAIL_C.emeraldDeep + ';font-weight:700;">Security notice:</span> PBIS will never ask for your password, bank details or payment by email. ' +
-          'Our only official contact address is ' + CONFIG.EMAIL_TO + '. If this message looks suspicious, report it to us and do not click any links.' +
+          'Our only official contact address is ' + CONFIG.CONTACT_EMAIL + '. If this message looks suspicious, report it to us and do not click any links.' +
         '</div>' +
       '</td></tr>' +
     '</table>' +
