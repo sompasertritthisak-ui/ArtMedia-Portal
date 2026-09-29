@@ -169,6 +169,12 @@ select option{background:#11151f;color:#f3f2ee;}
 .board-card .bc-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
 .board-empty{text-align:center;padding:20px 0;color:var(--faint);font-size:11.5px;font-style:italic;}
 
+.activity-log{max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding-left:2px;}
+.act-item{display:flex;gap:10px;align-items:flex-start;padding:7px 0;position:relative;}
+.act-item:not(:last-child)::before{content:'';position:absolute;left:4px;top:18px;bottom:-4px;width:1px;background:rgba(255,255,255,.1);}
+.act-dot{width:9px;height:9px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:4px;box-shadow:0 0 0 3px var(--gold-dim);}
+.act-what{font-size:12.5px;color:var(--platinum);font-weight:600;line-height:1.4;}
+.act-meta{font-size:10.5px;color:var(--faint);margin-top:2px;}
 .notes-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:220px;overflow-y:auto;}
 .note-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:10px 12px;}
 .note-item .n-meta{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-bottom:5px;}
@@ -183,6 +189,18 @@ select option{background:#11151f;color:#f3f2ee;}
 .bar-fill.over{background:linear-gradient(90deg,#b91c1c,var(--red));}
 .bar-val{width:56px;text-align:right;font-size:12px;font-weight:700;color:var(--faint);flex-shrink:0;}
 
+.rebalance-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:start;}
+.rb-col{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:10px;min-height:80px;transition:all .2s var(--ease);}
+.rb-col.dragover{border-color:var(--gold);background:var(--gold-dim);}
+.rb-head{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:700;color:var(--platinum);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid rgba(255,255,255,.08);}
+.rb-count{font-size:10px;color:var(--faint);background:rgba(255,255,255,.06);padding:2px 7px;border-radius:99px;}
+.rb-count.over{color:var(--red);background:var(--redbg);}
+.rb-card{background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;margin-bottom:7px;cursor:grab;transition:all .2s var(--ease);}
+.rb-card:hover{border-color:var(--gold-line);}
+.rb-card.dragging{opacity:.4;}
+.rb-id{font-size:9.5px;color:var(--faint);font-weight:700;}
+.rb-title{font-size:11.5px;color:var(--platinum);font-weight:600;line-height:1.3;margin-top:2px;}
+.rb-empty{font-size:11px;color:var(--faint);font-style:italic;text-align:center;padding:10px 0;}
 .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:16px;margin-bottom:26px;}
 .staff-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .3s var(--ease);text-align:center;}
 .staff-card:hover{transform:translateY(-3px);border-color:var(--gold-line);}
@@ -241,6 +259,8 @@ select option{background:#11151f;color:#f3f2ee;}
 .s-step.current .s-dot{border-color:var(--gold-l);color:var(--gold-l);box-shadow:0 0 0 4px var(--gold-dim);}
 .s-step span{font-size:11px;color:var(--faint);font-weight:600;}
 .s-step.done span,.s-step.current span{color:var(--platinum);}
+.dup-warn{display:flex;gap:12px;align-items:flex-start;background:var(--amberbg);border:1px solid rgba(251,191,36,.35);color:var(--amber);border-radius:var(--radius);padding:13px 16px;margin-bottom:18px;font-size:12.5px;line-height:1.5;}
+.dup-warn i{font-size:18px;flex-shrink:0;}
 .stage-banner{display:flex;gap:12px;align-items:flex-start;border-radius:var(--radius);padding:14px 16px;margin:20px 0 28px;font-size:13px;}
 .stage-banner.declined{background:var(--redbg);border:1px solid rgba(248,113,113,.3);color:#fca5a5;}
 .stage-banner.trashed{background:var(--redbg);border:1px solid rgba(248,113,113,.3);color:#fca5a5;}
@@ -298,6 +318,8 @@ select,input[type=text],input[type=date]{min-height:44px;}
       <button class="sb-link" data-view="staff"><i class="ti ti-users"></i> Staff Tasks</button>
       <button class="sb-link" data-view="calendar"><i class="ti ti-calendar"></i> Calendar</button>
       <button class="sb-link" data-view="analytics"><i class="ti ti-chart-bar"></i> Analytics</button>
+      <button class="sb-link" data-view="recurring"><i class="ti ti-repeat"></i> Recurring</button>
+      <button class="sb-link" data-view="archive"><i class="ti ti-archive"></i> Archive</button>
       <button class="sb-link" data-view="trash" id="navTrash"><i class="ti ti-trash"></i> Trash Bin</button>
     </nav>
     <div id="syncBadge" style="padding:10px 20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:7px;border-top:1px solid var(--gold-line);"></div>
@@ -319,6 +341,8 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <option value="staff">Staff Tasks</option>
         <option value="calendar">Calendar</option>
         <option value="analytics">Analytics</option>
+        <option value="recurring">Recurring</option>
+        <option value="archive">Archive</option>
         <option value="trash">Trash Bin</option>
       </select>
     </div>
@@ -326,7 +350,14 @@ select,input[type=text],input[type=date]{min-height:44px;}
 
       <!-- DASHBOARD -->
       <section id="view-dashboard" class="view">
-        <div class="view-title"><div><h1>Dashboard</h1><p>Overview of all media requests</p></div></div>
+        <div class="view-title"><div><h1>Dashboard</h1><p>Overview of all media requests</p></div>
+          <select id="dashRange" style="min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;background:var(--panel2);color:var(--platinum);">
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
         <div id="dashAlerts"></div>
         <div class="stat-grid" id="dashStats"></div>
         <div class="card">
@@ -361,6 +392,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="bulk-bar hidden" id="bulkBar">
           <span id="bulkCount">0 selected</span>
           <button type="button" class="btn btn-green btn-sm" id="bulkApproveBtn"><i class="ti ti-check"></i> Approve Selected</button>
+          <button type="button" class="btn btn-red btn-sm" id="bulkDeclineBtn"><i class="ti ti-x"></i> Decline Selected</button>
           <select id="bulkAssignSelect" style="min-height:36px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 10px;background:var(--panel2);color:var(--platinum);font-size:12.5px;"><option value="">Assign to…</option></select>
           <button type="button" class="btn btn-outline btn-sm" id="bulkClearBtn">Clear</button>
         </div>
@@ -377,7 +409,15 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="view-title"><div><h1>Staff Tasks</h1><p>Workload and task calendars for the Artmedia team</p></div>
           <select id="staffQuickSelect" style="min-height:44px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"><option value="">Quick select staff…</option></select>
         </div>
+        <div class="card" id="forecastCard">
+          <h3>Capacity Forecast — next 4 weeks</h3>
+          <div id="forecastBody"></div>
+        </div>
         <div class="staff-grid" id="staffGrid"></div>
+        <div class="card">
+          <h3>Workload Rebalancing <span style="font-weight:400;font-size:12px;color:var(--faint);">— drag a task onto another staff member</span></h3>
+          <div class="rebalance-wrap" id="rebalanceWrap"></div>
+        </div>
         <div class="card hidden" id="staffCalCard">
           <div class="cal-head">
             <h3 id="staffCalTitle">Calendar</h3>
@@ -416,6 +456,29 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="card"><h3>By Category</h3><div id="anaCat"></div></div>
         <div class="card"><h3>Staff Performance</h3><div id="anaStaff"></div></div>
         <div class="card"><h3>Sheets Sync Log</h3><div id="anaSync" style="font-size:13px;color:var(--faint);">Set <code>WEB_APP_URL</code> in <strong>both</strong> pbis-portal.html and pbis-admin.html to activate: live Google Sheets storage, cross-device sync (polls every 25s), attachment backup to Drive, and an email notification to artmedia@pbis.edu.la on every new request. See the Apps Script modal for the full setup script and instructions.</div></div>
+      </section>
+
+      <!-- RECURRING -->
+      <section id="view-recurring" class="view hidden">
+        <div class="view-title">
+          <div><h1>Recurring Requests</h1><p>Templates that auto-create a request on a schedule</p></div>
+          <button class="btn btn-gold" id="addRecurringBtn"><i class="ti ti-plus"></i> New Template</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="recurringTable"><thead><tr><th>Title</th><th>Category</th><th>Type</th><th>Dept</th><th>Every</th><th>Next Run</th><th>Assign To</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <p style="font-size:12px;color:var(--faint);">Templates generate their next request when an admin opens the dashboard on or after the due date.</p>
+      </section>
+
+      <!-- ARCHIVE -->
+      <section id="view-archive" class="view hidden">
+        <div class="view-title">
+          <div><h1>Archive</h1><p>Completed and declined requests, kept out of the active list</p></div>
+          <input type="text" id="archiveSearch" placeholder="Search archive…" style="min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:0 14px;font-size:13px;background:var(--panel2);color:var(--platinum);min-width:240px;">
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="archiveTable"><thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Status</th><th>Requestor</th><th>Assigned</th><th>Completed</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
       </section>
 
       <!-- TRASH -->
@@ -656,6 +719,7 @@ function boot(){
   renderSyncBadge();
   fetchRemote().then(renderAll);
   setInterval(()=>fetchRemote().then(renderAll), 25*1000);
+  try{ runRecurring(); }catch(err){ console.error('Recurring run failed:', err); }
   renderAll();
   initIdleLogout();
 }
@@ -707,6 +771,13 @@ function doLogout(){
    NAVIGATION
    ============================================================ */
 function switchView(view){
+  // Role guard: the sidebar hides Trash for Staff, but the mobile <select> still lists it.
+  // Without this check a Staff user could restore/permanently delete from a narrow window.
+  if(view === 'trash' && currentUser.role === 'Staff'){
+    toast('Trash Bin is restricted to Admins','lock');
+    document.getElementById('mobileNav').value = 'dashboard';
+    view = 'dashboard';
+  }
   const current = document.querySelector('.view:not(.hidden)');
   const next = document.getElementById('view-'+view);
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.toggle('active', l.dataset.view===view));
@@ -731,13 +802,199 @@ document.getElementById('mobileNav').addEventListener('change', e=>switchView(e.
 /* ============================================================
    RENDER ALL
    ============================================================ */
+let dashRange = 'all';
+document.getElementById('dashRange').addEventListener('change', function(){ dashRange = this.value; renderDashboard(); });
+function inDashRange(r){
+  if(dashRange === 'all') return true;
+  const days = parseInt(dashRange,10);
+  return (Date.now() - new Date(r.ts).getTime()) <= days*864e5;
+}
+
+/* ============================================================
+   ARCHIVE — completed & declined, kept out of the active queue
+   ============================================================ */
+document.getElementById('archiveSearch').addEventListener('input', ()=>{ clearTimeout(window.__archT); window.__archT = setTimeout(renderArchive, 200); });
+function renderArchive(){
+  const q = (document.getElementById('archiveSearch').value||'').trim().toLowerCase();
+  let reqs = allRequests().filter(r=>r.status==='Completed' || r.status==='Declined');
+  if(q) reqs = reqs.filter(r=>
+    (r.id||'').toLowerCase().includes(q) || (r.title||'').toLowerCase().includes(q) ||
+    (r.name||'').toLowerCase().includes(q) || (r.assigned||'').toLowerCase().includes(q)
+  );
+  document.querySelector('#archiveTable tbody').innerHTML = reqs.map(r=>`
+    <tr class="rowhover" onclick="openDetail('${r.id}')">
+      <td><strong>${r.id}</strong></td><td>${escHtml(r.title)}</td><td>${catBadge(r.cat)}</td>
+      <td>${statusBadge(r.status)}</td><td>${escHtml(r.name)}</td>
+      <td>${r.assigned || '<span style="color:var(--faint);">—</span>'}</td>
+      <td>${r.lastUpdated ? new Date(r.lastUpdated).toLocaleDateString('en-GB') : '—'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail('${r.id}')"><i class="ti ti-eye"></i> View</button></td>
+    </tr>`).join('') || emptyRow(8);
+}
+
+/* ============================================================
+   DUPLICATE DETECTION — same requestor, similar title, within 48h
+   ============================================================ */
+function findDuplicates(rec){
+  const norm = t => (t||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+  const a = norm(rec.title);
+  if(!a) return [];
+  return allRequests().filter(o=>{
+    if(o.id === rec.id || o.status==='Trash') return false;
+    if((o.email||'').toLowerCase() !== (rec.email||'').toLowerCase()) return false;
+    if(Math.abs(new Date(o.ts) - new Date(rec.ts)) > 48*36e5) return false;
+    const b = norm(o.title);
+    if(!b) return false;
+    if(a === b) return true;
+    // token overlap: >=60% of the shorter title's words appear in the other
+    const aw = a.split(/\s+/), bw = b.split(/\s+/);
+    const shorter = aw.length <= bw.length ? aw : bw, longer = aw.length <= bw.length ? bw : aw;
+    const hits = shorter.filter(w => w.length>2 && longer.includes(w)).length;
+    return shorter.length && (hits / shorter.length) >= 0.6;
+  });
+}
+
+/* ============================================================
+   RECURRING REQUEST TEMPLATES
+   ============================================================ */
+const RECUR_KEY = 'pbis-recurring';
+function loadRecurring(){ try{ return JSON.parse(localStorage.getItem(RECUR_KEY)) || []; }catch(e){ return []; } }
+function saveRecurring(list){ localStorage.setItem(RECUR_KEY, JSON.stringify(list)); }
+
+document.getElementById('addRecurringBtn').addEventListener('click', ()=>openRecurringForm());
+
+function openRecurringForm(editIdx){
+  const list = loadRecurring();
+  const t = (editIdx !== undefined) ? list[editIdx] : {title:'',cat:'design',type:'graphic-design',dept:'Marketing',cadence:'weekly',nextRun:new Date(Date.now()+864e5).toISOString().slice(0,10),assign:'',desc:'',deliverables:'',leadDays:5};
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+      <div class="modal" id="modalCard" style="max-width:560px;">
+        <div class="modal-head"><h2>${editIdx!==undefined?'Edit':'New'} Recurring Template</h2><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div>
+        <div class="modal-body">
+          <div class="dfield" style="margin-bottom:14px;"><div class="dl">Title</div><input id="rcTitle" value="${escHtml(t.title)}" placeholder="e.g. Weekly Newsletter Graphics" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+          <div class="dgrid" style="margin-bottom:14px;">
+            <div class="dfield"><div class="dl">Category</div><select id="rcCat" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">${Object.entries(CAT_LABELS).map(([v,l])=>`<option value="${v}" ${t.cat===v?'selected':''}>${l}</option>`).join('')}</select></div>
+            <div class="dfield"><div class="dl">Type</div><select id="rcType" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">${Object.entries(TYPE_LABELS).map(([v,l])=>`<option value="${v}" ${t.type===v?'selected':''}>${l}</option>`).join('')}</select></div>
+          </div>
+          <div class="dgrid" style="margin-bottom:14px;">
+            <div class="dfield"><div class="dl">Department</div><input id="rcDept" value="${escHtml(t.dept)}" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+            <div class="dfield"><div class="dl">Repeat</div><select id="rcCadence" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">
+              <option value="weekly" ${t.cadence==='weekly'?'selected':''}>Weekly</option>
+              <option value="biweekly" ${t.cadence==='biweekly'?'selected':''}>Every 2 weeks</option>
+              <option value="monthly" ${t.cadence==='monthly'?'selected':''}>Monthly</option>
+              <option value="termly" ${t.cadence==='termly'?'selected':''}>Every 3 months</option>
+            </select></div>
+          </div>
+          <div class="dgrid" style="margin-bottom:14px;">
+            <div class="dfield"><div class="dl">Next Run Date</div><input type="date" id="rcNext" value="${t.nextRun}" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+            <div class="dfield"><div class="dl">Auto-assign To</div><select id="rcAssign" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"><option value="">Unassigned</option>${STAFF.map(x=>`<option value="${x.name}" ${t.assign===x.name?'selected':''}>${x.name}</option>`).join('')}</select></div>
+          </div>
+          <div class="dfield" style="margin-bottom:14px;"><div class="dl">Description</div><textarea id="rcDesc" style="width:100%;min-height:60px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;background:var(--panel2);color:var(--platinum);font-family:inherit;font-size:13px;">${escHtml(t.desc)}</textarea></div>
+          <div class="dfield" style="margin-bottom:14px;"><div class="dl">Deliverables</div><textarea id="rcDeliv" style="width:100%;min-height:50px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;background:var(--panel2);color:var(--platinum);font-family:inherit;font-size:13px;">${escHtml(t.deliverables)}</textarea></div>
+          <div class="dfield" style="margin-bottom:16px;"><div class="dl">Deadline = run date + N days</div><input type="number" id="rcLead" value="${t.leadDays}" min="0" max="60" style="width:100px;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+          <div class="modal-actions" style="margin-top:0;padding-top:16px;">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-gold" onclick="saveRecurringTemplate(${editIdx!==undefined?editIdx:-1})"><i class="ti ti-check"></i> Save Template</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  gsap.fromTo('#modalBg',{opacity:0},{opacity:1,duration:.2});
+  gsap.fromTo('#modalCard',{opacity:0,y:20,scale:.97},{opacity:1,y:0,scale:1,duration:.35,ease:'power3.out'});
+}
+
+function saveRecurringTemplate(idx){
+  const t = {
+    title: document.getElementById('rcTitle').value.trim(),
+    cat: document.getElementById('rcCat').value,
+    type: document.getElementById('rcType').value,
+    dept: document.getElementById('rcDept').value.trim(),
+    cadence: document.getElementById('rcCadence').value,
+    nextRun: document.getElementById('rcNext').value,
+    assign: document.getElementById('rcAssign').value,
+    desc: document.getElementById('rcDesc').value.trim(),
+    deliverables: document.getElementById('rcDeliv').value.trim(),
+    leadDays: parseInt(document.getElementById('rcLead').value,10) || 0
+  };
+  if(!t.title || !t.nextRun){ alert('Title and next run date are required.'); return; }
+  const list = loadRecurring();
+  if(idx >= 0) list[idx] = t; else list.push(t);
+  saveRecurring(list);
+  closeModal(); toast('Template saved','repeat'); renderRecurring();
+}
+function deleteRecurringTemplate(idx){
+  if(!confirm('Delete this recurring template?')) return;
+  const list = loadRecurring(); list.splice(idx,1); saveRecurring(list);
+  toast('Template deleted','trash'); renderRecurring();
+}
+function advanceDate(dateStr, cadence){
+  const d = new Date(dateStr);
+  if(cadence==='weekly') d.setDate(d.getDate()+7);
+  else if(cadence==='biweekly') d.setDate(d.getDate()+14);
+  else if(cadence==='monthly') d.setMonth(d.getMonth()+1);
+  else if(cadence==='termly') d.setMonth(d.getMonth()+3);
+  return d.toISOString().slice(0,10);
+}
+/** Generates any due recurring requests. Runs when an admin loads the dashboard. */
+function runRecurring(){
+  if(currentUser.role === 'Staff') return;
+  const list = loadRecurring();
+  if(!list.length) return;
+  const today = new Date().toISOString().slice(0,10);
+  let created = 0, changed = false;
+  list.forEach(t=>{
+    let guard = 0;
+    while(t.nextRun && t.nextRun <= today && guard < 12){
+      const store = loadStore();
+      const nums = Object.keys(store).map(k=>parseInt(k.split('-')[1],10)).filter(n=>!isNaN(n));
+      const id = 'MM-' + ((nums.length?Math.max(...nums):2000)+1);
+      const runDate = new Date(t.nextRun);
+      const deadline = new Date(runDate.getTime() + (t.leadDays||0)*864e5).toISOString().slice(0,10);
+      store[id] = {
+        id, title: t.title, dept: t.dept, name: 'Artmedia (Recurring)',
+        email: CONFIG_TEAM_EMAIL, phone: '', cat: t.cat, type: t.type,
+        priority: 'standard', desc: t.desc, evdate: '', deadline,
+        location: '', deliverables: t.deliverables, atts: [],
+        status: t.assign ? 'In Progress' : 'Approved', assigned: t.assign || null,
+        date: runDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),
+        ts: runDate.toISOString(), trashed:false, trashedAt:null, declineReason:null,
+        recurring: true,
+        activity: [{by:'System', role:'Recurring', what:'Created from recurring template', ts:new Date().toISOString()}]
+      };
+      saveStore(store); syncUpsert(store[id]);
+      t.nextRun = advanceDate(t.nextRun, t.cadence);
+      created++; changed = true; guard++;
+    }
+  });
+  if(changed){ saveRecurring(list); }
+  if(created){ toast(`${created} recurring request(s) created`,'repeat'); }
+}
+const CONFIG_TEAM_EMAIL = 'artmedia@pbis.edu.la';
+
+function renderRecurring(){
+  const list = loadRecurring();
+  document.querySelector('#recurringTable tbody').innerHTML = list.map((t,i)=>`
+    <tr>
+      <td><strong>${escHtml(t.title)}</strong></td>
+      <td>${catBadge(t.cat)}</td>
+      <td>${TYPE_LABELS[t.type]||t.type}</td>
+      <td>${escHtml(t.dept)}</td>
+      <td>${t.cadence}</td>
+      <td>${t.nextRun}</td>
+      <td>${t.assign || '<span style="color:var(--faint);">Unassigned</span>'}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="openRecurringForm(${i})"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-red btn-sm" onclick="deleteRecurringTemplate(${i})"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('') || emptyRow(8);
+}
+
 function renderAll(){
   // Each section renders independently: one malformed record must never be able to
   // take down the whole dashboard (and with it, every event listener on the page).
   const sections = [
     ['autoTrash', autoTrash], ['dashboard', renderDashboard], ['requests', renderRequests],
     ['staff', renderStaffGrid], ['calendar', renderProdCalendar],
-    ['analytics', renderAnalytics], ['trash', renderTrash]
+    ['analytics', renderAnalytics], ['trash', renderTrash], ['archive', renderArchive], ['recurring', renderRecurring]
   ];
   sections.forEach(([name, fn])=>{
     try{ fn(); }catch(err){ console.error('Render failed in section:', name, err); }
@@ -773,7 +1030,7 @@ function countdownPill(req){
    DASHBOARD
    ============================================================ */
 function renderDashboard(){
-  const reqs = allRequests();
+  const reqs = allRequests().filter(inDashRange);
   const total = reqs.length;
   const approved = reqs.filter(r=>r.status==='Approved').length;
   const inProgress = reqs.filter(r=>r.status==='In Progress').length;
@@ -817,7 +1074,7 @@ function renderDashboard(){
     const urgent = daysLeft <= 2;
     return `<tr class="rowhover" onclick="openDetail('${r.id}')">
       <td><strong>${r.id}</strong></td><td>${escHtml(r.title)}</td><td>${statusBadge(r.status)}</td>
-      <td><span style="${urgent?'color:var(--red);font-weight:700;':''}">${r.deadline}${urgent?' ('+(daysLeft<0?'overdue':daysLeft+'d')+')':''}</span></td>
+      <td><span style="${urgent?'color:var(--red);font-weight:700;':''}">${escHtml(r.deadline)}${urgent?' ('+(daysLeft<0?'overdue':daysLeft+'d')+')':''}</span></td>
       <td>${r.assigned || '<span style="color:var(--faint);">Unassigned</span>'}</td>
     </tr>`;
   }).join('') || emptyRow(5);
@@ -898,6 +1155,8 @@ function filteredRequests(){
   const ft = document.getElementById('fType').value;
   const fq = document.getElementById('fSearch').value.trim().toLowerCase();
   let reqs = allRequests().filter(r=>r.status!=='Trash');
+  // Completed/Declined live in the Archive tab; only show them here if explicitly filtered for.
+  if(!fs) reqs = reqs.filter(r=>r.status!=='Completed' && r.status!=='Declined');
   if(fs) reqs = reqs.filter(r=>r.status===fs);
   if(fc) reqs = reqs.filter(r=>r.cat===fc);
   if(ft) reqs = reqs.filter(r=>r.type===ft);
@@ -956,6 +1215,14 @@ document.getElementById('bulkApproveBtn').addEventListener('click', ()=>{
   if(!confirm(`Approve ${selectedIds.size} selected request(s)?`)) return;
   selectedIds.forEach(id=>updateReq(id, {status:'Approved'}, true));
   toast(`Approved ${selectedIds.size} request(s)`);
+  selectedIds.clear(); renderAll();
+});
+document.getElementById('bulkDeclineBtn').addEventListener('click', ()=>{
+  const reason = prompt(`Decline ${selectedIds.size} selected request(s).\n\nShared reason (sent to every requestor):`);
+  if(reason === null) return;
+  const n = selectedIds.size;
+  selectedIds.forEach(id=>updateReq(id, {status:'Declined', declineReason: reason || 'Not specified'}, true));
+  toast(`Declined ${n} request(s)`,'x');
   selectedIds.clear(); renderAll();
 });
 document.getElementById('bulkAssignSelect').addEventListener('change', function(){
@@ -1068,6 +1335,7 @@ function openDetail(id){
     <div class="modal" id="modalCard">
       <div class="modal-head"><h2>${r.id} — ${escHtml(r.title)}</h2><div style="display:flex;gap:8px;align-items:center;"><button class="modal-close" onclick="printBrief('${id}')" title="Print / Save as PDF" style="width:40px;"><i class="ti ti-printer"></i></button><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div></div>
       <div class="modal-body">
+        ${(function(){ const dups = findDuplicates(r); return dups.length ? `<div class="dup-warn"><i class="ti ti-copy"></i><div><strong>Possible duplicate.</strong> ${escHtml(r.name)} submitted ${dups.length} similar request(s) within 48h: ${dups.map(d=>`<a onclick="openDetail('${d.id}')" style="color:var(--gold-l);cursor:pointer;text-decoration:underline;">${d.id}</a>`).join(', ')}</div></div>` : ''; })()}
         ${buildStageTrack(r)}
         ${r.status==='Pending' ? `<div style="margin-bottom:18px;">${countdownPill(r)} <span style="font-size:12px;color:var(--faint);">until auto-trash</span></div>` : ''}
         <div class="dgrid">
@@ -1088,6 +1356,12 @@ function openDetail(id){
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Deliverables</div><div class="dv" style="font-weight:400;">${escHtml(r.deliverables)||'—'}</div></div>
         ${r.declineReason ? `<div class="dfield" style="margin-bottom:16px;"><div class="dl">Decline Reason</div><div class="dv" style="font-weight:400;color:var(--red);">${escHtml(r.declineReason)}</div></div>` : ''}
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Attachments</div>${attsHtml}</div>
+        <div class="dfield" style="margin-bottom:16px;">
+          <div class="dl">Activity Log</div>
+          <div class="activity-log">${(r.activity||[]).length ? r.activity.slice().reverse().map(a=>`
+            <div class="act-item"><div class="act-dot"></div><div><div class="act-what">${escHtml(a.what)}</div><div class="act-meta">${escHtml(a.by)} · ${escHtml(a.role||'')} · ${new Date(a.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div></div></div>
+          `).join('') : '<p style="color:var(--faint);font-size:12.5px;margin:0;">No changes recorded yet.</p>'}</div>
+        </div>
         <div class="dfield" style="margin-bottom:16px;">
           <div class="dl">Internal Notes <span style="font-weight:400;text-transform:none;color:var(--faint);">(staff only — not visible to requestor)</span></div>
           <div class="notes-list" id="notesList">${(r.notes||[]).length ? r.notes.map(n=>`
@@ -1204,9 +1478,34 @@ function closeModal(){
 }
 function fmtSize(b){ if(!b) return ''; if(b<1024) return b+' B'; if(b<1024*1024) return (b/1024).toFixed(1)+' KB'; return (b/1024/1024).toFixed(1)+' MB'; }
 
+/** Human-readable description of what actually changed, for the audit trail. */
+function describeChange(before, patch){
+  const parts = [];
+  if(patch.status && patch.status !== before.status) parts.push(`Status: ${before.status} → ${patch.status}`);
+  if('assigned' in patch && patch.assigned !== before.assigned) parts.push(`Assigned: ${before.assigned||'Unassigned'} → ${patch.assigned||'Unassigned'}`);
+  if(patch.deadline && patch.deadline !== before.deadline) parts.push(`Deadline: ${before.deadline||'—'} → ${patch.deadline}`);
+  if(patch.evdate && patch.evdate !== before.evdate) parts.push(`Event date: ${before.evdate||'—'} → ${patch.evdate}`);
+  if(patch.declineReason && patch.declineReason !== before.declineReason) parts.push(`Decline reason: ${patch.declineReason}`);
+  if(patch.supportStaff){
+    const b = (before.supportStaff||[]).join(','), a = patch.supportStaff.join(',');
+    if(b !== a) parts.push(`Support staff: ${a || 'none'}`);
+  }
+  if(patch.deliveryFiles && (patch.deliveryFiles.length !== (before.deliveryFiles||[]).length)){
+    parts.push(`Delivered ${patch.deliveryFiles.length - (before.deliveryFiles||[]).length} file(s)`);
+  }
+  if(patch.notes && patch.notes.length !== (before.notes||[]).length) parts.push('Note added');
+  return parts.join(' · ');
+}
+
 function updateReq(id, patch, skipRender){
   const store = loadStore();
   if(!store[id]) return;
+  const summary = describeChange(store[id], patch);
+  if(summary){
+    const log = store[id].activity || [];
+    log.push({by: currentUser.name, role: currentUser.role, what: summary, ts: new Date().toISOString()});
+    patch = Object.assign({}, patch, {activity: log});
+  }
   Object.assign(store[id], patch, {lastUpdated:new Date().toISOString()});
   saveStore(store);
   pushSync(store[id]);
@@ -1361,9 +1660,24 @@ function removeSupportStaff(id, name){
   toast(`${name} removed from support`,'user-minus');
   openDetail(id);
 }
+/** Counts a staff member's current open (non-finished) primary assignments. */
+function openTaskCount(name, excludeId){
+  return allRequests().filter(r =>
+    r.assigned === name && r.id !== excludeId &&
+    r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'
+  ).length;
+}
 function assignReq(id){
   const val = document.getElementById('assignSelect').value;
   const store = loadStore();
+  // Capacity guard: the UI advertises an X/10 limit everywhere, so honour it here
+  // rather than letting it silently overflow. Overridable, but never silent.
+  if(val && val !== store[id].assigned){
+    const count = openTaskCount(val, id);
+    if(count >= TASK_LIMIT){
+      if(!confirm(`${val} is already at capacity (${count}/${TASK_LIMIT} open tasks).\n\nAssign anyway?`)) return;
+    }
+  }
   const patch = {assigned: val || null};
   if(val && store[id].status==='Approved') patch.status = 'In Progress';
   updateReq(id, patch);
@@ -1409,12 +1723,90 @@ function renderStaffGrid(){
     </div>`;
   }).join('');
   requestAnimationFrame(()=>document.querySelectorAll('#staffGrid .bar-fill').forEach(el=>el.style.width = el.dataset.pct+'%'));
+  renderForecast();
+  renderRebalance();
 
   document.getElementById('staffQuickSelect').innerHTML = '<option value="">Quick select staff…</option>' + visibleStaff.map(s=>`<option value="${s.name}" ${selectedStaff===s.name?'selected':''}>${s.name}</option>`).join('');
 
   document.querySelectorAll('.staff-card').forEach(card=>card.addEventListener('click', ()=>selectStaff(card.dataset.staff)));
   document.getElementById('staffQuickSelect').onchange = e=>selectStaff(e.target.value);
 }
+/* ============================================================
+   CAPACITY FORECAST — deadline clustering vs. team capacity
+   ============================================================ */
+function renderForecast(){
+  const el = document.getElementById('forecastBody');
+  if(!el) return;
+  const visible = STAFF.filter(s=>!STAFF_TAB_HIDDEN.includes(s.name));
+  const weeklyCapacity = visible.length * 3; // rule of thumb: ~3 deliverables per person per week
+  const open = allRequests().filter(r=>r.deadline && r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash');
+  const now = new Date(); now.setHours(0,0,0,0);
+  const weeks = [];
+  for(let w=0; w<4; w++){
+    const start = new Date(now.getTime() + w*7*864e5);
+    const end = new Date(start.getTime() + 7*864e5);
+    const items = open.filter(r=>{ const d = new Date(r.deadline); return d >= start && d < end; });
+    weeks.push({start, end, count: items.length, items});
+  }
+  el.innerHTML = weeks.map((wk,i)=>{
+    const pct = Math.min(100, Math.round(wk.count/weeklyCapacity*100));
+    const over = wk.count > weeklyCapacity;
+    const label = i===0 ? 'This week' : `Week of ${wk.start.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}`;
+    return `<div class="bar-row">
+      <div class="bl">${label}</div>
+      <div class="bar-track"><div class="bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+      <div class="bar-val" style="${over?'color:var(--red);':''}">${wk.count}/${weeklyCapacity}</div>
+    </div>`;
+  }).join('') + (weeks.some(w=>w.count>weeklyCapacity)
+    ? `<div class="alert-banner alert-amber" style="margin-top:14px;"><i class="ti ti-alert-triangle"></i> One or more weeks exceed estimated capacity (${weeklyCapacity} deliverables/week across ${visible.length} staff). Consider rescheduling deadlines.</div>`
+    : `<p style="font-size:12.5px;color:var(--faint);margin:12px 0 0;">Deadlines are within estimated capacity for the next 4 weeks.</p>`);
+}
+
+/* ============================================================
+   WORKLOAD REBALANCING — drag a task from one staff column to another
+   ============================================================ */
+function renderRebalance(){
+  const el = document.getElementById('rebalanceWrap');
+  if(!el) return;
+  const visible = STAFF.filter(s=>!STAFF_TAB_HIDDEN.includes(s.name));
+  const open = allRequests().filter(r=>r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash');
+  const unassigned = open.filter(r=>!r.assigned);
+  const cols = [{name:'Unassigned', items:unassigned}].concat(
+    visible.map(s=>({name:s.name, items: open.filter(r=>r.assigned===s.name)}))
+  );
+  el.innerHTML = cols.map(c=>`
+    <div class="rb-col" data-staff="${c.name}">
+      <div class="rb-head"><span>${c.name}</span><span class="rb-count ${c.items.length>=TASK_LIMIT?'over':''}">${c.name==='Unassigned'?c.items.length:c.items.length+'/'+TASK_LIMIT}</span></div>
+      ${c.items.length ? c.items.map(r=>`<div class="rb-card" draggable="true" data-id="${r.id}" onclick="openDetail('${r.id}')"><div class="rb-id">${r.id}</div><div class="rb-title">${escHtml(r.title)}</div></div>`).join('') : '<div class="rb-empty">None</div>'}
+    </div>`).join('');
+
+  el.querySelectorAll('.rb-card').forEach(card=>{
+    card.addEventListener('dragstart', e=>{ card.classList.add('dragging'); e.dataTransfer.setData('text/plain', card.dataset.id); });
+    card.addEventListener('dragend', ()=>card.classList.remove('dragging'));
+  });
+  el.querySelectorAll('.rb-col').forEach(col=>{
+    col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', ()=>col.classList.remove('dragover'));
+    col.addEventListener('drop', e=>{
+      e.preventDefault(); col.classList.remove('dragover');
+      if(currentUser.role === 'Staff'){ toast('Only Admins can reassign tasks','lock'); return; }
+      const id = e.dataTransfer.getData('text/plain');
+      const target = col.dataset.staff;
+      const store = loadStore();
+      if(!store[id]) return;
+      const newAssigned = target === 'Unassigned' ? null : target;
+      if(store[id].assigned === newAssigned) return;
+      if(newAssigned && openTaskCount(newAssigned, id) >= TASK_LIMIT){
+        if(!confirm(`${newAssigned} is already at capacity (${TASK_LIMIT}). Reassign anyway?`)) return;
+      }
+      const patch = {assigned: newAssigned};
+      if(newAssigned && store[id].status === 'Approved') patch.status = 'In Progress';
+      updateReq(id, patch);
+      toast(`${id} → ${newAssigned || 'Unassigned'}`,'arrows-exchange');
+    });
+  });
+}
+
 function selectStaff(name){
   selectedStaff = name || null;
   document.querySelectorAll('.staff-card').forEach(c=>c.classList.toggle('active', c.dataset.staff===name));
@@ -1506,6 +1898,8 @@ function renderAnalytics(){
   const decided = reqs.filter(r=>r.status==='Approved'||r.status==='Declined'||r.status==='In Progress'||r.status==='Completed');
   const approvalRate = decided.length ? Math.round((decided.length - reqs.filter(r=>r.status==='Declined').length)/decided.length*100) : 0;
   const overdue = reqs.filter(r=>r.status==='Pending' && timeLeft(r).urgent).length;
+  const rated = reqs.filter(r=>r.rating);
+  const avgRatingLabel = rated.length ? (rated.reduce((s2,r)=>s2+r.rating,0)/rated.length).toFixed(1) + '★' : '—';
   const slaCompliance = reqs.length ? Math.round((reqs.length - overdue)/reqs.length*100) : 100;
 
   document.getElementById('anaStats').innerHTML = [
@@ -1513,6 +1907,7 @@ function renderAnalytics(){
     stat('ti-thumb-up','var(--emerald-l)','var(--emerald-dim)', approvalRate+'%', 'Approval Rate'),
     stat('ti-shield-check','var(--gold)','var(--gold-dim)', slaCompliance+'%', 'SLA Compliance'),
     stat('ti-alert-triangle','var(--red)','var(--redbg)', overdue, 'Overdue Tasks'),
+    stat('ti-star','var(--gold)','var(--gold-dim)', avgRatingLabel, 'Avg Satisfaction'),
   ].join('');
   animateCounters('#anaStats');
 
@@ -1552,8 +1947,19 @@ function renderBarGroup(elId, entries){
 
 document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
   const reqs = allRequests();
-  const cols = ['id','title','cat','type','dept','name','email','phone','priority','status','deadline','evdate','location','deliverables','desc','assigned','date'];
-  const rows = [cols.join(',')].concat(reqs.map(r=>cols.map(c=>`"${String(r[c]||'').replace(/"/g,'""')}"`).join(',')));
+  const cols = ['id','title','cat','type','dept','name','email','phone','priority','status','deadline','evdate','location','deliverables','desc','assigned','date','trashedAt','lastUpdated'];
+  const extra = ['supportStaff','notes','deliveryFiles','deliveryNote'];
+  const header = cols.concat(extra).join(',');
+  const rows = [header].concat(reqs.map(r=>{
+    const base = cols.map(c=>`"${String(r[c]||'').replace(/"/g,'""')}"`);
+    const ext = [
+      (r.supportStaff||[]).join('; '),
+      (r.notes||[]).map(n=>`${n.author}: ${n.text}`).join(' | '),
+      (r.deliveryFiles||[]).map(f=>f.name).join('; '),
+      r.deliveryNote||''
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
+    return base.concat(ext).join(',');
+  }));
   const blob = new Blob([rows.join('\n')], {type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'pbis-requests-export.csv'; a.click();
@@ -1588,7 +1994,7 @@ function showAppsScriptModal(){
 const CONFIG = {
   SPREADSHEET_ID: '1WafEV6xSyzNTZ0ulRNGcgi0ZjZWJnSQnVi7DnugXVV8', // your PBIS Artmedia sheet
   SHEET_NAME: 'Requests',
-  EMAIL_TO: 'artmedia@pbis.edu.la',       // who gets notified on every new request
+  EMAIL_TO: 'artmedia@pbis.edu.la',       // team notification recipients — comma-separate for several (e.g. 'artmedia@pbis.edu.la, top@pbis.edu.la')
   DRIVE_FOLDER_ID: '',                     // optional: paste a Drive folder ID to store attachments there
   ADMIN_URL: 'https://sompasertritthisak-ui.github.io/ArtMedia-Portal/admin/', // shown as a button in the email
   BRAND: 'PBIS Artmedia',
@@ -1721,7 +2127,43 @@ function doGet(e){
     }
     return jsonOut({found:false});
   }
+  if(action === 'rate'){
+    // One-click star rating from the delivery email. Verified by id+email like track.
+    const id = (e.parameter.id||'').trim().toUpperCase();
+    const email = (e.parameter.email||'').trim().toLowerCase();
+    const score = parseInt(e.parameter.score,10);
+    const ok = (score>=1 && score<=5) ? saveRating(id, email, score) : false;
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:Georgia,serif;background:#f6f2e4;padding:60px 20px;text-align:center;color:#0e2e23;">' +
+      '<div style="max-width:440px;margin:0 auto;background:#fff;border:1px solid #e3d4a0;border-radius:16px;padding:40px 32px;">' +
+      '<div style="height:5px;background:linear-gradient(90deg,#c9a84c,#f0d78c,#c9a84c);margin:-40px -32px 28px;border-radius:16px 16px 0 0;"></div>' +
+      (ok ? '<h2 style="margin:0 0 10px;">Thank you!</h2><p style="color:#3c6b57;font-size:14px;margin:0;">Your ' + score + '-star rating for ' + id + ' has been recorded. We appreciate the feedback.</p>'
+          : '<h2 style="margin:0 0 10px;">Could not record rating</h2><p style="color:#3c6b57;font-size:14px;margin:0;">This rating link appears to be invalid or expired.</p>') +
+      '</div></div>'
+    );
+  }
   return jsonOut({error:'unknown action'});
+}
+
+/** Stores a 1-5 satisfaction score on a request, verified by matching id + email. */
+function saveRating(id, email, score){
+  if(!id || !email) return false;
+  const sheet = getSheet(CONFIG.SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const keyIdx = headers.indexOf('ID');
+  const jsonIdx = headers.indexOf('Payload JSON');
+  for(let i=1; i<data.length; i++){
+    if((data[i][keyIdx]||'').toString().toUpperCase() !== id) continue;
+    let payload;
+    try{ payload = JSON.parse(data[i][jsonIdx]); }catch(err){ return false; }
+    if((payload.email||'').toLowerCase().trim() !== email) return false;
+    payload.rating = score;
+    payload.ratedAt = new Date().toISOString();
+    upsertRow(CONFIG.SHEET_NAME, payload, 'ID');
+    return true;
+  }
+  return false;
 }
 
 function doPost(e){
@@ -1743,12 +2185,12 @@ function doPost(e){
   const payload = body.payload;
   const result = upsertRow(CONFIG.SHEET_NAME, payload, 'ID');
   if(result.isNew){
-    // Email-flood guard: always save the request (data integrity first), but skip
-    // sending emails if this same address has already submitted 3+ times in 10 minutes.
-    if(!isEmailFlooding(payload.email)){
-      sendNotificationEmail(payload);
-      sendSubmissionConfirmationEmail(payload);
-    }
+    // The team is ALWAYS notified of a new request — that alert is operationally critical
+    // and must never be silently dropped. The flood guard only suppresses the automated
+    // reply back to the requestor, which is what actually causes inbox spam.
+    const flooding = isEmailFlooding(payload.email);
+    sendNotificationEmail(payload, flooding);
+    if(!flooding) sendSubmissionConfirmationEmail(payload);
   } else if(payload.status === 'Approved' && result.oldStatus !== 'Approved'){
     sendApprovalEmail(payload);
   } else if(action === 'reschedule' && ((payload.deadline||'') !== (result.oldDeadline||'') || (payload.evdate||'') !== (result.oldEvdate||''))){
@@ -1985,7 +2427,7 @@ function emailRow(label, value){
 }
 
 /** Sends a branded HTML notification email to the Artmedia team whenever a brand-new request comes in. */
-function sendNotificationEmail(payload){
+function sendNotificationEmail(payload, rapidSubmissions){
   const catLabel = CAT_LABELS_MAIL[payload.cat] || payload.cat || '—';
   const priority = (payload.priority || 'standard').toUpperCase();
   const fileCount = (payload.atts || []).length;
@@ -2013,8 +2455,10 @@ function sendNotificationEmail(payload){
     (payload.deliverables ? '<tr><td style="padding:16px 32px 0;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Deliverables</div><div style="font-family:Arial,sans-serif;font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">' + escapeHtml(payload.deliverables) + '</div></td></tr>' : '') +
     '<tr><td style="padding:8px 32px 4px;"><table role="presentation">' + adminBtn + '</table></td></tr>';
 
-  const html = emailShell('New Media Request', escapeHtml(payload.title || 'Untitled request'), MAIL_C.emeraldDeep, bodyRows,
-    'This request will auto-move to Trash if left Pending for more than 72 hours.');
+  const footerNote = rapidSubmissions
+    ? 'Heads up: this requestor has submitted several requests in a short window — check for duplicates. This request will auto-move to Trash if left Pending for more than 72 hours.'
+    : 'This request will auto-move to Trash if left Pending for more than 72 hours.';
+  const html = emailShell('New Media Request', escapeHtml(payload.title || 'Untitled request'), MAIL_C.emeraldDeep, bodyRows, footerNote);
 
   MailApp.sendEmail({
     to: CONFIG.EMAIL_TO,
@@ -2113,6 +2557,22 @@ function sendRescheduleEmail(payload, oldDeadline, oldEvdate){
   });
 }
 
+/** One-click 1-5 star row for the delivery email. Each star is a link to the rate endpoint. */
+function buildRatingRow(payload){
+  const base = ScriptApp.getService().getUrl();
+  if(!base) return '';
+  const stars = [1,2,3,4,5].map(function(n){
+    const url = base + '?action=rate&id=' + encodeURIComponent(payload.id) + '&email=' + encodeURIComponent(payload.email) + '&score=' + n;
+    return '<a href="' + url + '" style="text-decoration:none;font-size:26px;color:' + MAIL_C.gold + ';padding:0 4px;">&#9733;</a>';
+  }).join('');
+  return '<tr><td style="padding:24px 32px 4px;text-align:center;">' +
+    '<div style="border-top:1px solid #eee2bd;padding-top:20px;">' +
+    '<div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:' + MAIL_C.textMuted + ';margin-bottom:10px;">How did we do?</div>' +
+    stars +
+    '<div style="font-size:11px;color:' + MAIL_C.textMuted + ';margin-top:8px;">Tap a star to rate this request</div>' +
+    '</div></td></tr>';
+}
+
 /** Sends the requestor their final files + a completion note when staff mark a request Completed via the delivery flow. */
 function sendDeliveryEmail(payload){
   if(!payload.email) return;
@@ -2131,7 +2591,8 @@ function sendDeliveryEmail(payload){
       '<table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' + fileLinks + '</table>' +
     '</td></tr>' +
     (payload.deliveryNote ? '<tr><td style="padding:18px 32px 0;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Message from the team</div><div style="font-family:Arial,sans-serif;font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">' + escapeHtml(payload.deliveryNote) + '</div></td></tr>' : '') +
-    '<tr><td style="padding:18px 32px 4px;"><div style="font-size:13px;color:' + MAIL_C.textMuted + ';line-height:1.6;">Reference <strong>' + payload.id + '</strong>. Thanks for working with PBIS Artmedia!</div></td></tr>';
+    '<tr><td style="padding:18px 32px 4px;"><div style="font-size:13px;color:' + MAIL_C.textMuted + ';line-height:1.6;">Reference <strong>' + payload.id + '</strong>. Thanks for working with PBIS Artmedia!</div></td></tr>' +
+    buildRatingRow(payload);
 
   const html = emailShell('Request Delivered \u2713', escapeHtml(payload.title || 'Your request'), MAIL_C.emeraldLight, bodyRows,
     'This is the final delivery for this request. Reply to this email if anything is missing.');
