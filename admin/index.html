@@ -71,6 +71,18 @@ button{cursor:pointer;}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#12100a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
 .sb-user .un{font-size:13px;font-weight:700;color:#fff;}
 .sb-user .ur{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;}
+.update-banner{display:flex;align-items:center;gap:14px;padding:13px 22px;background:linear-gradient(90deg,var(--gold-dim),rgba(201,168,76,.05));border-bottom:1px solid var(--gold);color:var(--gold-l);font-size:13px;position:sticky;top:0;z-index:120;animation:ubSlide .4s var(--ease);}
+@keyframes ubSlide{from{transform:translateY(-100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.update-banner > i{font-size:20px;flex-shrink:0;}
+.ub-text{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.4;}
+.ub-text strong{color:var(--platinum);font-weight:600;}
+.ub-text span{font-size:11px;color:var(--faint);}
+.ub-text code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-size:10.5px;color:var(--gold-l);}
+.ub-btn{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 18px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#12100a;font-weight:700;font-size:12.5px;cursor:pointer;transition:transform .2s var(--ease),box-shadow .2s var(--ease);flex-shrink:0;}
+.ub-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(201,168,76,.35);}
+.ub-dismiss{background:none;border:none;color:var(--faint);font-size:16px;cursor:pointer;padding:6px;flex-shrink:0;}
+.ub-dismiss:hover{color:var(--platinum);}
+@media (max-width:640px){.update-banner{flex-wrap:wrap;padding:12px 16px;} .ub-text span{display:none;}}
 .confidential-tag{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);font-size:9.5px;line-height:1.6;color:var(--faint);text-align:center;letter-spacing:.04em;text-transform:uppercase;}
 .confidential-tag i{color:var(--gold);}
 .confidential-tag span{text-transform:none;letter-spacing:0;opacity:.75;}
@@ -379,6 +391,15 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <option value="trash">Trash Bin</option>
       </select>
     </div>
+    <div id="updateBanner" class="update-banner hidden">
+      <i class="ti ti-refresh-alert"></i>
+      <div class="ub-text">
+        <strong>A new version of the dashboard is available.</strong>
+        <span>You are running <code id="ubCurrent"></code> · latest is <code id="ubLatest"></code></span>
+      </div>
+      <button type="button" id="ubUpdateBtn" class="ub-btn"><i class="ti ti-download"></i> Update Now</button>
+      <button type="button" id="ubDismissBtn" class="ub-dismiss" title="Remind me later"><i class="ti ti-x"></i></button>
+    </div>
     <main class="content">
 
       <!-- DASHBOARD -->
@@ -548,6 +569,13 @@ select,input[type=text],input[type=date]{min-height:44px;}
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script>
+/* ============================================================
+   APP VERSION — bump this string on every deploy. The dashboard polls its own
+   file and compares this value, so staff get told when their cached copy is stale
+   instead of silently running an old build. Format: YYYY.MM.DD.build
+   ============================================================ */
+const APP_VERSION = '2026.09.29.1';
+
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 document.querySelectorAll('.copyYear').forEach(el=>el.textContent = new Date().getFullYear());
@@ -1039,6 +1067,81 @@ function boot(){
   });
   try{ runRecurring(); }catch(err){ console.error('Recurring run failed:', err); }
   initIdleLogout();
+  initUpdateChecks();
+}
+
+/* ============================================================
+   UPDATE DETECTION — tells staff when their cached copy is stale
+   ============================================================ */
+let latestVersion = APP_VERSION;
+let updateDismissedFor = sessionStorage.getItem('pbis-update-dismissed') || '';
+
+/** Fetches this page's own source (cache-busted) and reads the deployed APP_VERSION. */
+async function checkForUpdate(){
+  try{
+    const res = await fetch(location.pathname + '?vcheck=' + Date.now(), {cache: 'no-store'});
+    if(!res.ok) return;
+    const text = await res.text();
+    const m = text.match(/const APP_VERSION = '([^']+)'/);
+    if(!m) return;
+    latestVersion = m[1];
+    if(latestVersion !== APP_VERSION && latestVersion !== updateDismissedFor){
+      showUpdateBanner();
+    }
+  }catch(e){
+    // Offline or blocked — silently skip; this must never disrupt the dashboard.
+  }
+}
+
+function showUpdateBanner(){
+  const el = document.getElementById('updateBanner');
+  if(!el || !el.classList.contains('hidden')) return;
+  document.getElementById('ubCurrent').textContent = APP_VERSION;
+  document.getElementById('ubLatest').textContent = latestVersion;
+  el.classList.remove('hidden');
+}
+
+/** Clears every cache layer we can reach, then reloads from the network. */
+async function performHardRefresh(){
+  const btn = document.getElementById('ubUpdateBtn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Updating…'; }
+
+  // Warn rather than silently discard queued writes.
+  if(typeof outboxCount === 'function' && outboxCount() > 0){
+    if(!confirm('You still have unsaved changes syncing to the sheet.\n\nUpdate anyway? (They will be retried after reload.)')){
+      if(btn){ btn.disabled = false; btn.innerHTML = '<i class="ti ti-download"></i> Update Now'; }
+      return;
+    }
+  }
+  try{
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  }catch(e){ console.warn('Cache clear partially failed:', e); }
+
+  // Cache-busting query param forces a fresh document even behind aggressive CDN caching.
+  const url = location.pathname + '?v=' + Date.now() + location.hash;
+  location.replace(url);
+}
+
+function initUpdateChecks(){
+  const btn = document.getElementById('ubUpdateBtn');
+  const dismiss = document.getElementById('ubDismissBtn');
+  if(btn) btn.addEventListener('click', performHardRefresh);
+  if(dismiss) dismiss.addEventListener('click', ()=>{
+    sessionStorage.setItem('pbis-update-dismissed', latestVersion);
+    updateDismissedFor = latestVersion;
+    document.getElementById('updateBanner').classList.add('hidden');
+  });
+  // First check shortly after load, then every 10 minutes, plus on tab focus.
+  setTimeout(checkForUpdate, 20000);
+  setInterval(checkForUpdate, 10*60*1000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdate(); });
 }
 
 /* ============================================================
@@ -1830,6 +1933,7 @@ function openDetail(id){
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Deliverables</div><div class="dv" style="font-weight:400;">${escHtml(r.deliverables)||'—'}</div></div>
         ${r.declineReason ? `<div class="dfield" style="margin-bottom:16px;"><div class="dl">Decline Reason</div><div class="dv" style="font-weight:400;color:var(--red);">${escHtml(r.declineReason)}</div></div>` : ''}
         <div class="dfield" style="margin-bottom:16px;"><div class="dl">Attachments</div>${attsHtml}</div>
+        ${r.driveLink ? `<div class="dfield" style="margin-bottom:16px;"><div class="dl">Shared Drive Link</div><a class="att-link" href="${escHtml(r.driveLink)}" target="_blank" rel="noopener" style="border-color:var(--emerald-line);color:var(--emerald-l);"><i class="ti ti-brand-google-drive"></i> Open shared folder <span style="margin-left:auto;font-weight:400;color:var(--faint);"><i class="ti ti-external-link"></i></span></a></div>` : ''}
         <div class="dfield" style="margin-bottom:16px;">
           <div class="dl">Activity Log</div>
           <div class="activity-log">${(r.activity||[]).length ? r.activity.slice().reverse().map(a=>`
@@ -1953,6 +2057,7 @@ function printBrief(id){
     <div>${escHtml(r.deliverables)||'—'}</div>
     <div class="section-h">Reference Attachments</div>
     ${attsHtml}
+    ${r.driveLink ? `<div class="section-h">Shared Drive Link</div><div style="word-break:break-all;">${escHtml(r.driveLink)}</div>` : ''}
     <div class="brief-legal">
       <p><strong>&copy; ${new Date().getFullYear()} Panyathip British International School. All rights reserved.</strong></p>
       <p>Internal &amp; Confidential — for authorised PBIS staff and appointed contractors only. All media produced under this brief remains the intellectual property of Panyathip British International School. Reproduction, redistribution or commercial use without written authorisation is prohibited.</p>
@@ -2446,7 +2551,7 @@ function renderBarGroup(elId, entries){
 
 document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
   const reqs = allRequests();
-  const cols = ['id','title','cat','type','dept','name','email','phone','priority','status','deadline','evdate','location','deliverables','desc','assigned','date','trashedAt','lastUpdated'];
+  const cols = ['id','title','cat','type','dept','name','email','phone','priority','status','deadline','evdate','location','deliverables','desc','assigned','date','driveLink','trashedAt','lastUpdated'];
   const extra = ['supportStaff','notes','deliveryFiles','deliveryNote'];
   const header = cols.concat(extra).join(',');
   const rows = [header].concat(reqs.map(r=>{
@@ -2595,7 +2700,7 @@ function setupSheet(){
     'ID':90,'Title':220,'Category':150,'Type':170,'Department':110,'Requestor':130,
     'Email':190,'Phone':110,'Priority':90,'Status':100,'Deadline':100,'Event Date':100,
     'Location':150,'Deliverables':220,'Description':280,'Assigned To':110,'Submitted':100,
-    'Attachments':200,'Trashed At':140,'Last Updated':140,'Payload JSON':80
+    'Attachments':200,'Drive Link':220,'Delivered Files':200,'Rating':70,'Owning Dept':110,'Project':110,'Support Staff':150,'Trashed At':140,'Last Updated':140,'Payload JSON':80
   };
   headers.forEach(function(h, i){ sheet.setColumnWidth(i+1, widths[h] || 130); });
 
@@ -2608,7 +2713,7 @@ function setupSheet(){
   SpreadsheetApp.flush();
 }
 
-const HEADERS = ['ID','Title','Category','Type','Department','Owning Dept','Project','Requestor','Email','Phone','Priority','Status','Deadline','Event Date','Location','Deliverables','Description','Assigned To','Support Staff','Submitted','Attachments','Delivered Files','Rating','Trashed At','Last Updated','Payload JSON'];
+const HEADERS = ['ID','Title','Category','Type','Department','Owning Dept','Project','Requestor','Email','Phone','Priority','Status','Deadline','Event Date','Location','Deliverables','Description','Assigned To','Support Staff','Submitted','Attachments','Drive Link','Delivered Files','Rating','Trashed At','Last Updated','Payload JSON'];
 
 /* Every dashboard tab has a matching sheet tab, so the spreadsheet is a complete
    mirror of the system rather than just a request log. */
@@ -2759,6 +2864,10 @@ function doPost(e){
     if(!flooding) sendSubmissionConfirmationEmail(payload);
   } else if(payload.status === 'Approved' && result.oldStatus !== 'Approved'){
     sendApprovalEmail(payload);
+  } else if(payload.status === 'Declined' && result.oldStatus !== 'Declined'){
+    sendDeclineEmail(payload);
+  } else if(payload.status === 'In Progress' && result.oldStatus !== 'In Progress'){
+    sendInProductionEmail(payload);
   } else if(action === 'reschedule' && ((payload.deadline||'') !== (result.oldDeadline||'') || (payload.evdate||'') !== (result.oldEvdate||''))){
     sendRescheduleEmail(payload, result.oldDeadline, result.oldEvdate);
   } else if(action === 'deliver' && payload.status === 'Completed' && result.oldStatus !== 'Completed'){
@@ -2874,6 +2983,7 @@ function upsertRow(sheetName, payload, keyCol){
       case 'Support Staff': return (payload.supportStaff||[]).join(', ');
       case 'Submitted': return payload.date;
       case 'Attachments': return (payload.atts||[]).map(function(a){return a.name;}).join(', ');
+      case 'Drive Link': return payload.driveLink || '';
       case 'Delivered Files': return (payload.deliveryFiles||[]).map(function(a){return a.name;}).join(', ');
       case 'Rating': return payload.rating || '';
       case 'Trashed At': return payload.trashedAt;
@@ -3117,6 +3227,12 @@ function checkAutoTrash(){
           sheet.getRange(i+1, jsonIdx+1).setValue(JSON.stringify(payload));
         }catch(err){ /* ignore malformed payload */ }
         colorRow(sheet, i+1, 'Trash');
+        // Tell the requestor rather than letting their request vanish silently.
+        try{
+          const expired = JSON.parse(data[i][jsonIdx]);
+          expired.status = 'Trash';
+          sendExpiredEmail(expired);
+        }catch(err){ /* malformed payload — skip notification */ }
       }
     }
   }
@@ -3142,30 +3258,55 @@ const MAIL_C = {
 
 function emailShell(eyebrow, heading, accentColor, bodyRowsHtml, footerNote){
   return '' +
-  '<div style="background:' + MAIL_C.cream + ';padding:40px 16px;font-family:Georgia,serif;">' +
-    '<table role="presentation" width="100%" style="max-width:560px;margin:0 auto;border-collapse:collapse;background:' + MAIL_C.card + ';border:1px solid ' + MAIL_C.goldBorder + ';border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(10,59,46,.1);">' +
-      '<tr><td style="background:linear-gradient(135deg,' + MAIL_C.emeraldDeep + ',' + MAIL_C.emerald + ');padding:30px 32px;text-align:center;">' +
-        '<img src="cid:logo" alt="PBIS Artmedia" width="150" style="display:block;margin:0 auto;max-width:150px;height:auto;">' +
+  '<div style="background:' + MAIL_C.cream + ';padding:36px 16px;font-family:Georgia,serif;">' +
+    '<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;border-collapse:collapse;background:' + MAIL_C.card + ';border:1px solid ' + MAIL_C.goldBorder + ';border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(10,59,46,.12);">' +
+
+      /* ---- Masthead: logo, full organisation name, and the two brand lines ---- */
+      '<tr><td style="background:linear-gradient(160deg,' + MAIL_C.emeraldDeep + ' 0%,' + MAIL_C.emerald + ' 100%);padding:34px 32px 30px;text-align:center;">' +
+        '<img src="cid:logo" alt="Panyathip British International School" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;">' +
+        '<div style="font-family:Georgia,serif;font-size:19px;line-height:1.35;color:' + MAIL_C.goldLight + ';font-weight:700;letter-spacing:.01em;">25 Years of Excellence</div>' +
+        '<div style="font-family:Georgia,serif;font-style:italic;font-size:16px;line-height:1.4;color:' + MAIL_C.gold + ';margin-top:3px;">From Laos to the World</div>' +
+        '<div style="width:46px;height:1px;background:' + MAIL_C.gold + ';margin:15px auto 13px;opacity:.65;"></div>' +
+        '<div style="font-family:Arial,sans-serif;font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:#cbdbd2;line-height:1.6;">Panyathip British International School<br><span style="color:' + MAIL_C.gold + ';">Artmedia &middot; Marketing &amp; Media</span></div>' +
       '</td></tr>' +
+
       '<tr><td style="height:5px;background:linear-gradient(90deg,' + MAIL_C.gold + ',' + MAIL_C.goldLight + ',' + MAIL_C.gold + ');font-size:0;line-height:0;">&nbsp;</td></tr>' +
+
       '<tr><td style="padding:32px 32px 8px;">' +
-        '<div style="display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:' + MAIL_C.cream + ';background:' + accentColor + ';font-weight:700;padding:5px 12px;border-radius:99px;margin-bottom:14px;">' + eyebrow + '</div>' +
-        '<div style="font-family:Georgia,serif;font-size:25px;color:' + MAIL_C.textDark + ';font-weight:700;line-height:1.3;">' + heading + '</div>' +
+        '<div style="display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:' + MAIL_C.cream + ';background:' + accentColor + ';font-weight:700;padding:6px 14px;border-radius:99px;margin-bottom:15px;">' + eyebrow + '</div>' +
+        '<div style="font-family:Georgia,serif;font-size:26px;color:' + MAIL_C.textDark + ';font-weight:700;line-height:1.3;">' + heading + '</div>' +
       '</td></tr>' +
+
       bodyRowsHtml +
+
       '<tr><td style="padding:22px 32px 30px;">' +
         '<div style="padding-top:18px;border-top:1px solid ' + MAIL_C.goldBorder + ';font-family:Arial,sans-serif;font-size:11px;color:' + MAIL_C.textMuted + ';">' + footerNote + '</div>' +
-        '<div style="margin-top:16px;padding-top:14px;border-top:1px solid ' + MAIL_C.goldBorder + ';font-family:Arial,sans-serif;font-size:10px;color:' + MAIL_C.textMuted + ';line-height:1.7;">' +
-          '<strong style="color:' + MAIL_C.emeraldDeep + ';">&copy; ' + (new Date()).getFullYear() + ' Panyathip British International School. All rights reserved.</strong><br>' +
-          'This is an automated message from the official PBIS Artmedia Request Portal, sent because a media request was submitted using your email address. ' +
-          'All media produced by PBIS Artmedia remains the intellectual property of Panyathip British International School.<br>' +
+        '<div style="margin-top:18px;padding:16px 18px;background:' + MAIL_C.cream + ';border-radius:10px;font-family:Arial,sans-serif;font-size:10px;color:' + MAIL_C.textMuted + ';line-height:1.7;">' +
+          '<strong style="color:' + MAIL_C.emeraldDeep + ';font-size:11px;">&copy; ' + (new Date()).getFullYear() + ' Panyathip British International School. All rights reserved.</strong><br>' +
+          'Automated message from the official PBIS Artmedia Request Portal, sent because a media request was submitted using your email address. ' +
+          'All media produced by PBIS Artmedia remains the intellectual property of Panyathip British International School.<br><br>' +
           '<span style="color:' + MAIL_C.emeraldDeep + ';font-weight:700;">Security notice:</span> PBIS will never ask for your password, bank details or payment by email. ' +
-          'Our only official contact address is ' + CONFIG.EMAIL_TO + '. If this message looks suspicious or you did not submit a request, report it to us and do not click any links.' +
+          'Our only official contact address is ' + CONFIG.EMAIL_TO + '. If this message looks suspicious, report it to us and do not click any links.' +
         '</div>' +
       '</td></tr>' +
     '</table>' +
+
+    '<div style="max-width:600px;margin:14px auto 0;text-align:center;font-family:Arial,sans-serif;font-size:10px;color:#8a8368;letter-spacing:.06em;">' +
+      'PANYATHIP BRITISH INTERNATIONAL SCHOOL &middot; VIENTIANE, LAO PDR' +
+    '</div>' +
   '</div>';
 }
+
+/** Standard warm sign-off used across requestor-facing emails. */
+function emailSignoff(){
+  return '<tr><td style="padding:22px 32px 0;">' +
+    '<div style="border-top:1px solid ' + MAIL_C.goldBorder + ';padding-top:18px;font-family:Arial,sans-serif;font-size:13px;color:' + MAIL_C.textDark + ';line-height:1.7;">' +
+      'With appreciation,<br>' +
+      '<strong style="font-family:Georgia,serif;font-size:15px;color:' + MAIL_C.emeraldDeep + ';">The Artmedia Team</strong><br>' +
+      '<span style="font-size:11px;color:' + MAIL_C.textMuted + ';">Marketing &amp; Media &middot; Panyathip British International School</span>' +
+    '</div></td></tr>';
+}
+
 function emailRow(label, value){
   if(!value) return '';
   return '<tr>' +
@@ -3197,6 +3338,7 @@ function sendNotificationEmail(payload, rapidSubmissions){
         emailRow('Event Date', payload.evdate || '—') +
         emailRow('Location', escapeHtml(payload.location||'')) +
         emailRow('Attachments', fileCount ? (fileCount + ' file' + (fileCount===1?'':'s')) : '—') +
+        emailRow('Drive Link', payload.driveLink ? '<a href="' + payload.driveLink + '" style="color:' + MAIL_C.emeraldDeep + ';font-weight:700;">Open shared folder</a>' : '') +
       '</table>' +
     '</td></tr>' +
     (payload.desc ? '<tr><td style="padding:18px 32px 0;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Description</div><div style="font-family:Arial,sans-serif;font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">' + escapeHtml(payload.desc) + '</div></td></tr>' : '') +
@@ -3251,23 +3393,38 @@ function sendSubmissionConfirmationEmail(payload){
   const catLabel = CAT_LABELS_MAIL[payload.cat] || payload.cat || '—';
 
   const bodyRows =
-    '<tr><td style="padding:14px 32px 4px;"><div style="font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">Hi ' + escapeHtml(payload.name || 'there') + ', thanks for your request — the Artmedia team has received it and will respond within 72 hours.</div></td></tr>' +
-    '<tr><td style="padding:18px 32px 4px;">' +
+    '<tr><td style="padding:16px 32px 4px;"><div style="font-size:14.5px;color:' + MAIL_C.textDark + ';line-height:1.75;">' +
+      'Dear ' + escapeHtml(payload.name || 'Colleague') + ',<br><br>' +
+      'Thank you for your request — we genuinely appreciate the care you have taken to give us clear, concise details. ' +
+      'A well-described brief is what allows our team to produce work that represents Panyathip at the standard twenty-five years has earned.<br><br>' +
+      'Your request is now with the Artmedia team for review. You will hear from us at every stage: when it is reviewed, when it moves into production, and when your finished work is ready.' +
+    '</div></td></tr>' +
+    '<tr><td style="padding:22px 32px 4px;">' +
+      '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:' + MAIL_C.textMuted + ';margin-bottom:10px;">Your Request Summary</div>' +
       '<table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' +
         emailRow('Reference', payload.id) +
+        emailRow('Title', escapeHtml(payload.title||'')) +
         emailRow('Category', catLabel) +
         emailRow('Type', payload.type || '—') +
         emailRow('Deadline', payload.deadline || '—') +
+        emailRow('Event Date', payload.evdate || '—') +
       '</table>' +
     '</td></tr>' +
-    '<tr><td style="padding:6px 32px 4px;"><div style="font-size:13px;color:' + MAIL_C.textMuted + ';line-height:1.6;">Save your Track ID (<strong>' + payload.id + '</strong>) — you can check live status any time on the Artmedia portal’s Track Request section.</div></td></tr>';
+    '<tr><td style="padding:20px 32px 0;">' +
+      '<div style="background:' + MAIL_C.cream + ';border-left:3px solid ' + MAIL_C.gold + ';border-radius:8px;padding:16px 18px;">' +
+        '<div style="font-family:Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Your Track ID</div>' +
+        '<div style="font-family:Georgia,serif;font-size:24px;font-weight:700;color:' + MAIL_C.emeraldDeep + ';letter-spacing:.02em;">' + payload.id + '</div>' +
+        '<div style="font-family:Arial,sans-serif;font-size:12px;color:' + MAIL_C.textMuted + ';margin-top:7px;line-height:1.6;">Keep this reference — you can check live status any time in the Track Request section of the Artmedia portal.</div>' +
+      '</div>' +
+    '</td></tr>' +
+    emailSignoff();
 
-  const html = emailShell('Request Received', escapeHtml(payload.title || 'Your request'), MAIL_C.gold, bodyRows,
-    'This request will auto-move to Trash if left Pending for more than 72 hours.');
+  const html = emailShell('Request Received', 'Thank you for your request.', MAIL_C.gold, bodyRows,
+    'Requests left Pending for more than 72 hours are automatically moved to Trash, so we aim to respond well within that window.');
 
   MailApp.sendEmail({
     to: payload.email,
-    subject: 'We Have Received Your Request — ' + payload.id,
+    subject: 'Thank You — We Have Received Your Request (' + payload.id + ')',
     htmlBody: html,
     inlineImages: {logo: getLogoBlob()}
   });
@@ -3351,6 +3508,76 @@ function sendDeliveryEmail(payload){
     htmlBody: html,
     inlineImages: {logo: getLogoBlob()}
   });
+}
+
+/** Sent when a request is Declined — honest, respectful, and offers a next step. */
+function sendDeclineEmail(payload){
+  if(!payload.email) return;
+  const bodyRows =
+    '<tr><td style="padding:16px 32px 4px;"><div style="font-size:14.5px;color:' + MAIL_C.textDark + ';line-height:1.75;">' +
+      'Dear ' + escapeHtml(payload.name || 'Colleague') + ',<br><br>' +
+      'Thank you for submitting this request. After review, the Artmedia team is not able to take it forward on this occasion.' +
+    '</div></td></tr>' +
+    (payload.declineReason ? '<tr><td style="padding:18px 32px 0;"><div style="background:' + MAIL_C.cream + ';border-left:3px solid ' + MAIL_C.emeraldLight + ';border-radius:8px;padding:16px 18px;"><div style="font-family:Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:' + MAIL_C.textMuted + ';margin-bottom:6px;">Reason</div><div style="font-family:Arial,sans-serif;font-size:14px;color:' + MAIL_C.textDark + ';line-height:1.6;">' + escapeHtml(payload.declineReason) + '</div></div></td></tr>' : '') +
+    '<tr><td style="padding:18px 32px 4px;"><table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' +
+      emailRow('Reference', payload.id) +
+      emailRow('Title', escapeHtml(payload.title||'')) +
+    '</table></td></tr>' +
+    '<tr><td style="padding:16px 32px 0;"><div style="font-size:13.5px;color:' + MAIL_C.textMuted + ';line-height:1.7;">' +
+      'If circumstances change, or you would like to discuss an alternative approach, please do submit a revised request or contact us directly — we are always glad to talk it through.' +
+    '</div></td></tr>' +
+    emailSignoff();
+
+  const html = emailShell('Request Not Proceeding', escapeHtml(payload.title || 'Your request'), MAIL_C.emerald, bodyRows,
+    'You may submit a revised request at any time through the Artmedia portal.');
+  MailApp.sendEmail({to: payload.email, subject: 'Update On Your Request — ' + payload.id, htmlBody: html, inlineImages: {logo: getLogoBlob()}});
+}
+
+/** Sent when a request moves into production (assigned to a team member). */
+function sendInProductionEmail(payload){
+  if(!payload.email) return;
+  const catLabel = CAT_LABELS_MAIL[payload.cat] || payload.cat || '—';
+  const bodyRows =
+    '<tr><td style="padding:16px 32px 4px;"><div style="font-size:14.5px;color:' + MAIL_C.textDark + ';line-height:1.75;">' +
+      'Dear ' + escapeHtml(payload.name || 'Colleague') + ',<br><br>' +
+      'Good news — your request has been assigned and work is now under way. Our team has everything they need from your brief and will be in touch if any detail needs clarifying.' +
+    '</div></td></tr>' +
+    '<tr><td style="padding:22px 32px 4px;"><table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' +
+      emailRow('Reference', payload.id) +
+      emailRow('Title', escapeHtml(payload.title||'')) +
+      emailRow('Category', catLabel) +
+      emailRow('Deadline', payload.deadline || '—') +
+      emailRow('Event Date', payload.evdate || '—') +
+    '</table></td></tr>' +
+    '<tr><td style="padding:16px 32px 0;"><div style="font-size:13px;color:' + MAIL_C.textMuted + ';line-height:1.7;">' +
+      'You can follow live progress any time using your Track ID (<strong style="color:' + MAIL_C.emeraldDeep + ';">' + payload.id + '</strong>) in the Track Request section of the portal.' +
+    '</div></td></tr>' +
+    emailSignoff();
+
+  const html = emailShell('In Production', escapeHtml(payload.title || 'Your request'), MAIL_C.emeraldLight, bodyRows,
+    'We will notify you again as soon as your finished work is ready.');
+  MailApp.sendEmail({to: payload.email, subject: 'Your Request Is Now In Production — ' + payload.id, htmlBody: html, inlineImages: {logo: getLogoBlob()}});
+}
+
+/** Sent when a Pending request auto-expires after 72 hours without review. */
+function sendExpiredEmail(payload){
+  if(!payload.email) return;
+  const bodyRows =
+    '<tr><td style="padding:16px 32px 4px;"><div style="font-size:14.5px;color:' + MAIL_C.textDark + ';line-height:1.75;">' +
+      'Dear ' + escapeHtml(payload.name || 'Colleague') + ',<br><br>' +
+      'Your request has passed our 72-hour review window without being actioned, so it has been moved to our archive automatically. We are sorry it did not reach you sooner.<br><br>' +
+      'If this work is still needed, please resubmit it through the portal and we will prioritise it — or contact us directly and we will pick it up straight away.' +
+    '</div></td></tr>' +
+    '<tr><td style="padding:18px 32px 4px;"><table role="presentation" width="100%" style="border-collapse:collapse;font-family:Arial,sans-serif;">' +
+      emailRow('Reference', payload.id) +
+      emailRow('Title', escapeHtml(payload.title||'')) +
+      emailRow('Originally Submitted', payload.date || '—') +
+    '</table></td></tr>' +
+    emailSignoff();
+
+  const html = emailShell('Request Archived', escapeHtml(payload.title || 'Your request'), MAIL_C.emerald, bodyRows,
+    'Resubmitting takes under a minute and your original details can be reused.');
+  MailApp.sendEmail({to: payload.email, subject: 'Your Request Needs Resubmitting — ' + payload.id, htmlBody: html, inlineImages: {logo: getLogoBlob()}});
 }
 
 function escapeHtml(s){
