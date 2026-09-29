@@ -68,6 +68,8 @@ button{cursor:pointer;}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#12100a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
 .sb-user .un{font-size:13px;font-weight:700;color:#fff;}
 .sb-user .ur{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;}
+.sb-logout-full{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--mist);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);}
+.sb-logout-full:hover{border-color:var(--red);background:var(--redbg);color:#fca5a5;}
 .sb-logout{margin-left:auto;background:none;border:none;color:var(--faint);font-size:18px;min-height:44px;min-width:44px;transition:color .2s var(--ease);}
 .sb-logout:hover{color:var(--red);}
 
@@ -302,7 +304,9 @@ select,input[type=text],input[type=date]{min-height:44px;}
     <div class="sb-user">
       <div class="avatar" id="sbAvatar">?</div>
       <div><div class="un" id="sbName">—</div><div class="ur" id="sbRole">—</div></div>
-      <button class="sb-logout" id="logoutBtn" title="Logout"><i class="ti ti-logout"></i></button>
+    </div>
+    <div style="padding:0 14px 16px;">
+      <button class="sb-logout-full" id="logoutBtn"><i class="ti ti-logout"></i> Log Out</button>
     </div>
   </aside>
 
@@ -695,10 +699,9 @@ function doLogout(){
   location.reload();
 }
 
-(function restoreSession(){
-  const saved = sessionStorage.getItem('pbis-admin-session');
-  if(saved){ currentUser = JSON.parse(saved); boot(); }
-})();
+/* Session restore runs at the very END of this script (see bottom) — it must not run
+   before every `let` declaration below has initialized, or boot() hits a temporal-dead-zone
+   ReferenceError and silently kills every event listener on the page. */
 
 /* ============================================================
    NAVIGATION
@@ -729,13 +732,16 @@ document.getElementById('mobileNav').addEventListener('change', e=>switchView(e.
    RENDER ALL
    ============================================================ */
 function renderAll(){
-  autoTrash();
-  renderDashboard();
-  renderRequests();
-  renderStaffGrid();
-  renderProdCalendar();
-  renderAnalytics();
-  renderTrash();
+  // Each section renders independently: one malformed record must never be able to
+  // take down the whole dashboard (and with it, every event listener on the page).
+  const sections = [
+    ['autoTrash', autoTrash], ['dashboard', renderDashboard], ['requests', renderRequests],
+    ['staff', renderStaffGrid], ['calendar', renderProdCalendar],
+    ['analytics', renderAnalytics], ['trash', renderTrash]
+  ];
+  sections.forEach(([name, fn])=>{
+    try{ fn(); }catch(err){ console.error('Render failed in section:', name, err); }
+  });
 }
 
 function catBadge(cat){
@@ -2204,6 +2210,20 @@ document.getElementById('purgeAllBtn').addEventListener('click', ()=>{
   saveStore(store); purgedIds.forEach(id=>syncDelete(id));
   toast('Trash bin purged','trash-x'); renderAll();
 });
+
+/* ============================================================
+   SESSION RESTORE — must be the LAST thing in this script so that every
+   `let`/`const` above has initialized and every listener is attached first.
+   ============================================================ */
+(function restoreSession(){
+  try{
+    const saved = sessionStorage.getItem('pbis-admin-session');
+    if(saved){ currentUser = JSON.parse(saved); boot(); }
+  }catch(err){
+    console.error('Session restore failed, showing login instead:', err);
+    sessionStorage.removeItem('pbis-admin-session');
+  }
+})();
 </script>
 </body>
 </html>
