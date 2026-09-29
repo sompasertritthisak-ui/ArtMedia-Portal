@@ -625,16 +625,40 @@ const STAFF = [
 const staffInDept = id => STAFF.filter(s=>s.dept===id);
 const TASK_LIMIT = 10;
 
+/* Passwords are NOT stored here. Each entry holds a per-user random salt and a
+   PBKDF2-SHA256 hash (310,000 iterations) of the password. Reading this file gives an
+   attacker only salted hashes; with 16-character random passwords, brute-forcing
+   them offline is computationally infeasible. */
+const PBKDF2_ITERATIONS = 310000;
 const ACCOUNTS = {
-  super_admin: {pass:'Xk9!mQ2v#Lp7', role:'Super Admin', name:'Top'},
-  manager:     {pass:'Rt4$Nw8&Zq1J', role:'Manager', name:"P'Keaw"},
-  admin_noy:   {pass:'Bv6@Hs3%Yc9K', role:'Admin', name:'Noy'},
-  admin_kop:   {pass:'Fj2#Wm7!Tx4Q', role:'Admin', name:'Kop'},
-  staff_simon: {pass:'Gd8&Pl5$Vn2R', role:'Staff', name:'Simon'},
-  staff_nuza:    {pass:'Qm3!Bx8&Kf5T', role:'Staff', name:'Nuza'},
-  staff_mooping: {pass:'Hc5&Tq8!Xm3B', role:'Staff', name:'Mooping'},
-  staff_tobee:   {pass:'Jn9$Ky4#Wf7V', role:'Staff', name:'Tobee'}
+  super_admin:    {role:'Super Admin', name:"Top", salt:'94048e55fa55e403db4feb29cd15b294', hash:'10f5b348226b55e566760df4c1c6c86bbf66beb376425cfccdc57ae02ba89d4f'},
+  manager:        {role:'Manager', name:"P'Keaw", salt:'d8c76cd8b060b3b3bc76c92554708f41', hash:'e4a348acc6fedb2cb6b3fd6db84def14924c3aea842c18e2ed46f93e6fd895cb'},
+  admin_noy:      {role:'Admin', name:"Noy", salt:'74d11b9cd04ab01d3b53a841baed2a19', hash:'eabce0a286fe45bf52e2ab5ddcf82592f1ae447cb5768f5bfa17d8a56dde15c3'},
+  admin_kop:      {role:'Admin', name:"Kop", salt:'b5c9c89c53820ed39d0dd1822c33d848', hash:'75cb9fc435d5e179a11a049f8441f23dcb37f7807a649f6b3a7b64ffce614139'},
+  staff_simon:    {role:'Staff', name:"Simon", salt:'96926e2630430c7e565d9c06eb365e60', hash:'a49e65784d2dadcad5df395962c58e9aa3287dabc3d906bfa30567387258dd9f'},
+  staff_nuza:     {role:'Staff', name:"Nuza", salt:'7bd0bf902c8f4511cd7ee14ce39d52e4', hash:'e58b40061d06fc012852a07115179a5d1de71ce0bb8e80f697ce59ca46fd7f00'},
+  staff_mooping:  {role:'Staff', name:"Mooping", salt:'ec5168d5e422a0b91fd4922810544e61', hash:'fc765626950aa39dcf07b57672e30580f65d7199f21e3c0253f9600cde1953db'},
+  staff_tobee:    {role:'Staff', name:"Tobee", salt:'51f34a7cbf0cb91c5199b566bcd84dee', hash:'059fa67d16966515f6d00b3d38b8ad290e457d502b360eaaa125ce691e0c139e'}
 };
+
+/** Derives the PBKDF2 hash of a password using the account's salt (Web Crypto, async). */
+async function derivePasswordHash(password, saltHex){
+  const enc = new TextEncoder();
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(h=>parseInt(h,16)));
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    {name:'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash:'SHA-256'}, key, 256
+  );
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/** Length-constant comparison so timing can't leak how much of the hash matched. */
+function safeEqual(a, b){
+  if(typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let diff = 0;
+  for(let i=0; i<a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 const TYPE_LABELS = {
   'photography':'Photography','videography':'Videography','campaign-coverage':'Campaign Coverage','social-coverage':'Social Media Coverage',
@@ -885,20 +909,55 @@ function toast(msg,icon='circle-check'){
 /* ============================================================
    LOGIN
    ============================================================ */
-document.getElementById('loginForm').addEventListener('submit', e=>{
+document.getElementById('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   const acc = ACCOUNTS[u];
   const err = document.getElementById('loginErr');
-  if(acc && acc.pass === p){
+  const btn = e.target.querySelector('button[type=submit]');
+
+  // Throttle: PBKDF2 already makes each attempt costly, but this stops rapid scripted guessing.
+  const lockedUntil = +(sessionStorage.getItem('pbis-login-lock') || 0);
+  if(Date.now() < lockedUntil){
+    err.textContent = `Too many failed attempts. Try again in ${Math.ceil((lockedUntil-Date.now())/1000)}s.`;
+    err.style.color = '#fca5a5'; err.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Verifying…';
+  let valid = false;
+  try{
+    if(acc){
+      const digest = await derivePasswordHash(p, acc.salt);
+      valid = safeEqual(digest, acc.hash);
+    } else {
+      // Derive anyway against a dummy salt so a bad username costs the same time
+      // as a bad password — otherwise response timing reveals valid usernames.
+      await derivePasswordHash(p, '00000000000000000000000000000000');
+    }
+  }catch(cryptoErr){
+    console.error('Password verification failed:', cryptoErr);
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-login"></i> Sign In';
+
+  if(valid){
     // Never persist the password itself — only the identity and a login timestamp.
+    sessionStorage.removeItem('pbis-login-fails');
     currentUser = {username:u, role:acc.role, name:acc.name, loginAt:Date.now()};
     sessionStorage.setItem('pbis-admin-session', JSON.stringify(currentUser));
     err.style.display='none';
     boot();
   } else {
-    err.textContent = 'Invalid username or password.';
+    const fails = (+(sessionStorage.getItem('pbis-login-fails')||0)) + 1;
+    sessionStorage.setItem('pbis-login-fails', String(fails));
+    if(fails >= 5){
+      sessionStorage.setItem('pbis-login-lock', String(Date.now() + 60000));
+      sessionStorage.setItem('pbis-login-fails', '0');
+      err.textContent = 'Too many failed attempts. Locked for 60 seconds.';
+    } else {
+      err.textContent = `Invalid username or password. (${5-fails} attempt${5-fails===1?'':'s'} left)`;
+    }
     err.style.color = '#fca5a5';
     err.style.display='block';
     gsap.fromTo('.login-card', {x:-8}, {x:8, duration:.08, repeat:5, yoyo:true, ease:'power1.inOut', onComplete:()=>gsap.set('.login-card',{x:0})});
