@@ -745,11 +745,14 @@ document.getElementById('loginForm').addEventListener('submit', e=>{
   const acc = ACCOUNTS[u];
   const err = document.getElementById('loginErr');
   if(acc && acc.pass === p){
-    currentUser = {username:u, ...acc};
+    // Never persist the password itself — only the identity and a login timestamp.
+    currentUser = {username:u, role:acc.role, name:acc.name, loginAt:Date.now()};
     sessionStorage.setItem('pbis-admin-session', JSON.stringify(currentUser));
     err.style.display='none';
     boot();
   } else {
+    err.textContent = 'Invalid username or password.';
+    err.style.color = '#fca5a5';
     err.style.display='block';
     gsap.fromTo('.login-card', {x:-8}, {x:8, duration:.08, repeat:5, yoyo:true, ease:'power1.inOut', onComplete:()=>gsap.set('.login-card',{x:0})});
   }
@@ -762,11 +765,12 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 function initials(name){ return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
 
 function boot(){
-  gsap.to('#loginScreen', {opacity:0, duration:.5, ease:'power2.inOut', onComplete:()=>{
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    gsap.fromTo('#app', {opacity:0}, {opacity:1, duration:.5});
-  }});
+  // Reveal the app SYNCHRONOUSLY first. Previously this happened inside a GSAP
+  // onComplete callback, so if the CDN was slow/blocked the login screen never
+  // hid and the dashboard appeared permanently stuck. Animation is optional polish.
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  try{ gsap.fromTo('#app', {opacity:0}, {opacity:1, duration:.4}); }catch(err){ /* animation optional */ }
   document.getElementById('sbAvatar').textContent = initials(currentUser.name);
   document.getElementById('sbName').textContent = currentUser.name;
   document.getElementById('sbRole').textContent = currentUser.role;
@@ -796,8 +800,9 @@ function boot(){
 /* ============================================================
    SESSION AUTO-LOGOUT — inactivity protection
    ============================================================ */
-const IDLE_LIMIT_MS = 15*60*1000;   // 15 minutes idle
-const IDLE_WARN_MS = 60*1000;       // show warning 60s before logout
+const IDLE_LIMIT_MS = 15*60*1000;      // signed out after 15 minutes of no activity
+const SESSION_MAX_MS = 60*60*1000;     // hard cap: 1 hour total, regardless of activity
+const IDLE_WARN_MS = 60*1000;          // warn 60s before either limit fires
 let lastActivity = Date.now();
 let idleWarned = false;
 function initIdleLogout(){
@@ -806,15 +811,34 @@ function initIdleLogout(){
   });
   setInterval(()=>{
     const idleFor = Date.now() - lastActivity;
+    const sessionAge = currentUser && currentUser.loginAt ? (Date.now() - currentUser.loginAt) : 0;
+
+    // Absolute cap wins over activity: an unattended-but-jiggled session still expires.
+    if(sessionAge >= SESSION_MAX_MS){
+      doLogout('Your 1-hour session limit was reached. Please sign in again.');
+      return;
+    }
     if(idleFor >= IDLE_LIMIT_MS){
-      doLogout();
-    } else if(idleFor >= IDLE_LIMIT_MS - IDLE_WARN_MS && !idleWarned){
-      showIdleWarning();
+      doLogout('You were signed out after 15 minutes of inactivity.');
+      return;
+    }
+    const nearSessionEnd = sessionAge >= SESSION_MAX_MS - IDLE_WARN_MS;
+    const nearIdleEnd = idleFor >= IDLE_LIMIT_MS - IDLE_WARN_MS;
+    if((nearSessionEnd || nearIdleEnd) && !idleWarned){
+      showIdleWarning(nearSessionEnd);
     }
   }, 5000);
 }
-function showIdleWarning(){
+function showIdleWarning(isSessionCap){
   idleWarned = true;
+  if(isSessionCap){
+    const el0 = document.createElement('div');
+    el0.id = 'idleWarning';
+    el0.style.cssText = 'position:fixed;bottom:24px;left:24px;z-index:600;background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--red);border-radius:12px;padding:16px 20px;color:#fff;font-size:13px;max-width:290px;box-shadow:0 20px 50px rgba(0,0,0,.5);';
+    el0.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#fca5a5;margin-bottom:6px;"><i class="ti ti-shield-lock"></i> Session ending</div><div style="color:var(--mist);">Your 1-hour session limit is almost up. You will need to sign in again — finish what you are doing now.</div>';
+    document.body.appendChild(el0);
+    return;
+  }
   const el = document.createElement('div');
   el.id = 'idleWarning';
   el.style.cssText = 'position:fixed;bottom:24px;left:24px;z-index:600;background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--amber);border-radius:12px;padding:16px 20px;color:#fff;font-size:13px;max-width:280px;box-shadow:0 20px 50px rgba(0,0,0,.5);';
@@ -827,8 +851,10 @@ function dismissIdleWarning(){
   const el = document.getElementById('idleWarning');
   if(el) el.remove();
 }
-function doLogout(){
+function doLogout(reason){
   sessionStorage.removeItem('pbis-admin-session');
+  if(reason) sessionStorage.setItem('pbis-logout-reason', reason);
+  currentUser = null;
   location.reload();
 }
 
@@ -2745,10 +2771,30 @@ document.getElementById('purgeAllBtn').addEventListener('click', ()=>{
    SESSION RESTORE — must be the LAST thing in this script so that every
    `let`/`const` above has initialized and every listener is attached first.
    ============================================================ */
+(function showLogoutReason(){
+  const reason = sessionStorage.getItem('pbis-logout-reason');
+  if(!reason) return;
+  sessionStorage.removeItem('pbis-logout-reason');
+  const err = document.getElementById('loginErr');
+  if(err){ err.textContent = reason; err.style.display = 'block'; err.style.color = 'var(--amber)'; }
+})();
+
 (function restoreSession(){
   try{
     const saved = sessionStorage.getItem('pbis-admin-session');
-    if(saved){ currentUser = JSON.parse(saved); boot(); }
+    if(!saved) return;
+    const sess = JSON.parse(saved);
+    const acc = ACCOUNTS[sess.username];
+    // Re-derive role and name from ACCOUNTS rather than trusting the stored blob,
+    // so editing sessionStorage can't escalate a Staff account to Super Admin.
+    if(!acc){ sessionStorage.removeItem('pbis-admin-session'); return; }
+    if(!sess.loginAt || (Date.now() - sess.loginAt) > SESSION_MAX_MS){
+      sessionStorage.removeItem('pbis-admin-session');
+      return;
+    }
+    currentUser = {username: sess.username, role: acc.role, name: acc.name, loginAt: sess.loginAt};
+    boot();
+    return;
   }catch(err){
     console.error('Session restore failed, showing login instead:', err);
     sessionStorage.removeItem('pbis-admin-session');
