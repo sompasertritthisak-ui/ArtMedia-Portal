@@ -637,37 +637,95 @@ function syncDelete(id){
   if(!WEB_APP_URL) return;
   fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'delete', id:id})}).catch(()=>{});
 }
-let syncState = WEB_APP_URL ? 'connecting' : 'offline';
+let syncState = 'local';           // local | syncing | synced | offline
+let lastSyncedAt = +(localStorage.getItem('pbis-last-synced') || 0);
+let syncInFlight = false;
+
+/** Offline-first fetch: never blocks the UI, never hangs, never lets a bad
+ *  response wipe the local cache. Returns true if a real sync landed. */
 async function fetchRemote(showToast){
-  if(!WEB_APP_URL){ syncState='offline'; renderSyncBadge(); return; }
+  if(!WEB_APP_URL){ syncState = 'local'; renderSyncBadge(); return false; }
+  if(syncInFlight) return false;
+  syncInFlight = true;
+  // Only show the "syncing" state if we've never synced — otherwise keep showing
+  // the last-synced state so the UI doesn't flicker on every background poll.
+  if(!lastSyncedAt){ syncState = 'syncing'; renderSyncBadge(); }
+
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 8000);
   try{
-    const res = await fetch(WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=list');
+    const res = await fetch(
+      WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=list&t=' + Date.now(),
+      {signal: controller.signal, cache: 'no-store'}
+    );
     const data = await res.json();
     if(data && Array.isArray(data.requests)){
-      const store = {};
-      data.requests.forEach(r=>{ if(r && r.id) store[r.id] = r; });
-      saveStore(store);
-      syncState = 'synced';
-      if(showToast) toast('Synced with Google Sheets','cloud-check');
+      const local = loadStore();
+      const localCount = Object.keys(local).length;
+      // Guard: an empty remote response when we hold local data almost always means a
+      // failed/partial read, not a genuinely empty sheet. Never destroy data on that.
+      if(data.requests.length === 0 && localCount > 0){
+        console.warn('Remote returned 0 records while local holds', localCount, '— keeping local data.');
+        syncState = 'offline';
+      } else {
+        const merged = {};
+        data.requests.forEach(r=>{ if(r && r.id) merged[r.id] = r; });
+        // Preserve any local record the remote hasn't caught up on yet (just-submitted
+        // or just-edited items whose no-cors POST hasn't landed in the sheet).
+        Object.keys(local).forEach(id=>{
+          if(!merged[id]){
+            const lu = new Date(local[id].lastUpdated || local[id].ts || 0).getTime();
+            if(Date.now() - lu < 120000) merged[id] = local[id];
+          }
+        });
+        saveStore(merged);
+        lastSyncedAt = Date.now();
+        localStorage.setItem('pbis-last-synced', String(lastSyncedAt));
+        syncState = 'synced';
+        if(showToast) toast('Synced with Google Sheets','cloud-check');
+      }
+    } else {
+      syncState = 'offline';
     }
   }catch(e){
-    syncState = 'error';
-    console.warn('Sync fetch failed', e);
+    syncState = 'offline';
+    if(e.name === 'AbortError') console.warn('Sync timed out after 8s — showing last saved data.');
+    else console.warn('Sync failed, showing last saved data:', e);
+  }finally{
+    clearTimeout(timer);
+    syncInFlight = false;
   }
   renderSyncBadge();
+  return syncState === 'synced';
 }
+
+function syncAgoLabel(){
+  if(!lastSyncedAt) return 'never';
+  const secs = Math.round((Date.now() - lastSyncedAt)/1000);
+  if(secs < 10) return 'just now';
+  if(secs < 60) return secs + 's ago';
+  const mins = Math.round(secs/60);
+  if(mins < 60) return mins + 'm ago';
+  return Math.round(mins/60) + 'h ago';
+}
+
 function renderSyncBadge(){
   const el = document.getElementById('syncBadge');
   if(!el) return;
-  const map = {
-    offline: ['ti-cloud-off','var(--faint)','Local only — connect Google Sheets in the script for cross-device sync'],
-    connecting: ['ti-cloud-upload','var(--amber)','Connecting…'],
-    synced: ['ti-cloud-check','var(--green)','Synced across devices'],
-    error: ['ti-cloud-x','var(--red)','Sync error — check Web App URL/deployment']
-  };
-  const [icon,color,label] = map[syncState] || map.offline;
+  let icon, color, label;
+  if(syncState === 'synced'){
+    icon='ti-cloud-check'; color='var(--emerald-l)'; label='Live · synced ' + syncAgoLabel();
+  } else if(syncState === 'syncing'){
+    icon='ti-cloud-upload'; color='var(--amber)'; label='Connecting…';
+  } else if(syncState === 'offline'){
+    icon='ti-cloud-off'; color='var(--amber)';
+    label = lastSyncedAt ? 'Offline · showing data from ' + syncAgoLabel() : 'Offline · showing last saved data';
+  } else {
+    icon='ti-device-laptop'; color='var(--faint)'; label='Local only — no Sheets URL configured';
+  }
   el.innerHTML = `<i class="ti ${icon}" style="color:${color};"></i> <span style="color:${color};">${label}</span>`;
 }
+
 function toast(msg,icon='circle-check'){
   const el = document.createElement('div');
   el.className='toast';
@@ -716,11 +774,22 @@ function boot(){
   autoTrash();
   setInterval(autoTrash, 5*60*1000);
   populateTypeFilter();
+  // Offline-first: paint immediately from the local cache so the dashboard is usable
+  // in milliseconds, then reconcile with the sheet in the background.
+  lastSyncedAt = +(localStorage.getItem('pbis-last-synced') || 0);
+  syncState = WEB_APP_URL ? (lastSyncedAt ? 'synced' : 'syncing') : 'local';
   renderSyncBadge();
-  fetchRemote().then(renderAll);
-  setInterval(()=>fetchRemote().then(renderAll), 25*1000);
-  try{ runRecurring(); }catch(err){ console.error('Recurring run failed:', err); }
   renderAll();
+  fetchRemote().then(changed=>{ if(changed) renderAll(); });
+  setInterval(()=>fetchRemote().then(changed=>{ if(changed) renderAll(); }), 25*1000);
+  // Keep the "synced Xs ago" label honest without re-rendering the whole dashboard.
+  setInterval(renderSyncBadge, 10*1000);
+  // Reconcile the moment the tab regains focus or the network returns.
+  window.addEventListener('online', ()=>fetchRemote().then(changed=>{ if(changed) renderAll(); }));
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) fetchRemote().then(changed=>{ if(changed) renderAll(); });
+  });
+  try{ runRecurring(); }catch(err){ console.error('Recurring run failed:', err); }
   initIdleLogout();
 }
 
@@ -1507,8 +1576,8 @@ function updateReq(id, patch, skipRender){
     patch = Object.assign({}, patch, {activity: log});
   }
   Object.assign(store[id], patch, {lastUpdated:new Date().toISOString()});
-  saveStore(store);
-  pushSync(store[id]);
+  saveStore(store);          // local write first — the UI must never wait on the network
+  pushSync(store[id]);       // fire-and-forget to the sheet
   if(!skipRender) renderAll();
 }
 function addNote(id){
