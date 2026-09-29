@@ -6,6 +6,9 @@
 <title>Admin Dashboard — PBIS Artmedia</title>
 <link rel="icon" id="favicon" href="">
 <meta name="theme-color" content="#0a3b2e">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Panyathip British International School">
+<meta name="copyright" content="© 2026 Panyathip British International School. All rights reserved.">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
 <style>
@@ -68,6 +71,9 @@ button{cursor:pointer;}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#12100a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
 .sb-user .un{font-size:13px;font-weight:700;color:#fff;}
 .sb-user .ur{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;}
+.confidential-tag{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);font-size:9.5px;line-height:1.6;color:var(--faint);text-align:center;letter-spacing:.04em;text-transform:uppercase;}
+.confidential-tag i{color:var(--gold);}
+.confidential-tag span{text-transform:none;letter-spacing:0;opacity:.75;}
 .sb-logout-full{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--mist);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);}
 .sb-logout-full:hover{border-color:var(--red);background:var(--redbg);color:#fca5a5;}
 .sb-logout{margin-left:auto;background:none;border:none;color:var(--faint);font-size:18px;min-height:44px;min-width:44px;transition:color .2s var(--ease);}
@@ -354,6 +360,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
     </div>
     <div style="padding:0 14px 16px;">
       <button class="sb-logout-full" id="logoutBtn"><i class="ti ti-logout"></i> Log Out</button>
+      <div class="confidential-tag"><i class="ti ti-lock"></i> Internal &amp; Confidential<br><span>&copy; <span class="copyYear">2026</span> PBIS · Unauthorised access prohibited</span></div>
     </div>
   </aside>
 
@@ -543,6 +550,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
 <script>
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+document.querySelectorAll('.copyYear').forEach(el=>el.textContent = new Date().getFullYear());
 const sbLogoSrc = document.querySelector('.sb-brand img')?.src;
 if(sbLogoSrc){ document.getElementById('favicon').href = sbLogoSrc; }
 
@@ -1918,7 +1926,11 @@ function printBrief(id){
     .pv{font-size:14px;font-weight:600;padding:8px 0;border-bottom:1px solid #eee;}
     .section-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:22px 0 6px;}
     .badge{display:inline-block;padding:4px 12px;border-radius:99px;background:#0a3b2e;color:#fff;font-size:11px;font-weight:700;}
-    @media print{ body{padding:20px;} }
+    .brief-legal{margin-top:34px;padding-top:16px;border-top:2px solid #c9a84c;font-size:10px;color:#5c6250;line-height:1.6;}
+    .brief-legal p{margin:0 0 6px;}
+    .brief-legal .prov{color:#8a8368;font-style:italic;}
+    .watermark{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%) rotate(-32deg);font-size:76px;font-weight:700;color:rgba(10,59,46,.05);letter-spacing:.08em;pointer-events:none;z-index:-1;white-space:nowrap;}
+    @media print{ body{padding:20px;} .watermark{display:block;} }
   </style></head>
   <body>
     <div class="head">${logoSrc?`<img src="${logoSrc}">`:''}<div><h1>${escHtml(r.title)}</h1><div class="sub">PBIS Artmedia — Production Brief</div></div></div>
@@ -1941,6 +1953,12 @@ function printBrief(id){
     <div>${escHtml(r.deliverables)||'—'}</div>
     <div class="section-h">Reference Attachments</div>
     ${attsHtml}
+    <div class="brief-legal">
+      <p><strong>&copy; ${new Date().getFullYear()} Panyathip British International School. All rights reserved.</strong></p>
+      <p>Internal &amp; Confidential — for authorised PBIS staff and appointed contractors only. All media produced under this brief remains the intellectual property of Panyathip British International School. Reproduction, redistribution or commercial use without written authorisation is prohibited.</p>
+      <p class="prov">Generated ${new Date().toLocaleString('en-GB')} · by ${escHtml(currentUser.name)} (${escHtml(currentUser.role)}) · Ref ${r.id} · PBIS Artmedia Request Portal</p>
+    </div>
+    <div class="watermark">PBIS CONFIDENTIAL</div>
   </body></html>`;
 
   const w = window.open('', '_blank');
@@ -3137,6 +3155,13 @@ function emailShell(eyebrow, heading, accentColor, bodyRowsHtml, footerNote){
       bodyRowsHtml +
       '<tr><td style="padding:22px 32px 30px;">' +
         '<div style="padding-top:18px;border-top:1px solid ' + MAIL_C.goldBorder + ';font-family:Arial,sans-serif;font-size:11px;color:' + MAIL_C.textMuted + ';">' + footerNote + '</div>' +
+        '<div style="margin-top:16px;padding-top:14px;border-top:1px solid ' + MAIL_C.goldBorder + ';font-family:Arial,sans-serif;font-size:10px;color:' + MAIL_C.textMuted + ';line-height:1.7;">' +
+          '<strong style="color:' + MAIL_C.emeraldDeep + ';">&copy; ' + (new Date()).getFullYear() + ' Panyathip British International School. All rights reserved.</strong><br>' +
+          'This is an automated message from the official PBIS Artmedia Request Portal, sent because a media request was submitted using your email address. ' +
+          'All media produced by PBIS Artmedia remains the intellectual property of Panyathip British International School.<br>' +
+          '<span style="color:' + MAIL_C.emeraldDeep + ';font-weight:700;">Security notice:</span> PBIS will never ask for your password, bank details or payment by email. ' +
+          'Our only official contact address is ' + CONFIG.EMAIL_TO + '. If this message looks suspicious or you did not submit a request, report it to us and do not click any links.' +
+        '</div>' +
       '</td></tr>' +
     '</table>' +
   '</div>';
