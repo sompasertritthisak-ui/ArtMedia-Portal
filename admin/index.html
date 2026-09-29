@@ -189,6 +189,30 @@ select option{background:#11151f;color:#f3f2ee;}
 .bar-fill.over{background:linear-gradient(90deg,#b91c1c,var(--red));}
 .bar-val{width:56px;text-align:right;font-size:12px;font-weight:700;color:var(--faint);flex-shrink:0;}
 
+.dept-pick{display:flex;gap:8px;flex-wrap:wrap;}
+.dept-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--mist);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);}
+.dept-btn:hover{border-color:var(--gold-line);color:var(--platinum);}
+.dept-btn.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold-l);}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;}
+.project-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--gold-line);border-radius:var(--radius);padding:20px;transition:border-color .2s var(--ease);}
+.project-card:hover{border-color:var(--gold);}
+.pj-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;}
+.pj-dept{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.pj-head h4{margin:0;font-size:16px;font-weight:600;color:var(--platinum);line-height:1.3;}
+.pj-desc{margin:6px 0 0;font-size:12.5px;color:var(--faint);line-height:1.5;}
+.pj-progress-wrap{margin-bottom:14px;}
+.pj-progress-top{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--faint);margin-bottom:7px;}
+.pj-progress-top strong{font-family:var(--serif);font-size:19px;color:var(--gold-l);}
+.pj-bar{height:9px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;}
+.pj-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold-l));border-radius:99px;transition:width .8s var(--ease);}
+.pj-fill.done{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
+.pj-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--faint);margin-bottom:14px;}
+.pj-meta span{display:inline-flex;align-items:center;gap:5px;}
+.pj-reqs{border-top:1px solid rgba(255,255,255,.08);padding-top:12px;display:flex;flex-direction:column;gap:7px;}
+.pj-req{display:flex;align-items:center;gap:9px;font-size:12px;cursor:pointer;padding:5px 7px;border-radius:6px;transition:background .2s var(--ease);}
+.pj-req:hover{background:var(--gold-dim);}
+.pj-req-id{color:var(--faint);font-weight:700;font-size:10.5px;flex-shrink:0;}
+.pj-req-title{flex:1;color:var(--platinum);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .rebalance-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:start;}
 .rb-col{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-sm);padding:10px;min-height:80px;transition:all .2s var(--ease);}
 .rb-col.dragover{border-color:var(--gold);background:var(--gold-dim);}
@@ -318,6 +342,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
       <button class="sb-link" data-view="staff"><i class="ti ti-users"></i> Staff Tasks</button>
       <button class="sb-link" data-view="calendar"><i class="ti ti-calendar"></i> Calendar</button>
       <button class="sb-link" data-view="analytics"><i class="ti ti-chart-bar"></i> Analytics</button>
+      <button class="sb-link" data-view="projects"><i class="ti ti-folders"></i> Projects</button>
       <button class="sb-link" data-view="recurring"><i class="ti ti-repeat"></i> Recurring</button>
       <button class="sb-link" data-view="archive"><i class="ti ti-archive"></i> Archive</button>
       <button class="sb-link" data-view="trash" id="navTrash"><i class="ti ti-trash"></i> Trash Bin</button>
@@ -341,6 +366,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <option value="staff">Staff Tasks</option>
         <option value="calendar">Calendar</option>
         <option value="analytics">Analytics</option>
+        <option value="projects">Projects</option>
         <option value="recurring">Recurring</option>
         <option value="archive">Archive</option>
         <option value="trash">Trash Bin</option>
@@ -447,6 +473,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
           <div><h1>Analytics</h1><p>Performance and SLA insight</p></div>
           <div style="display:flex;gap:10px;">
             <button class="btn btn-outline" id="exportCsvBtn"><i class="ti ti-download"></i> Export CSV</button>
+            <button class="btn btn-outline" id="backupNowBtn"><i class="ti ti-database-export"></i> Back Up Now</button>
             <button class="btn btn-gold" id="appsScriptBtn"><i class="ti ti-brand-google-drive"></i> Apps Script</button>
           </div>
         </div>
@@ -456,6 +483,15 @@ select,input[type=text],input[type=date]{min-height:44px;}
         <div class="card"><h3>By Category</h3><div id="anaCat"></div></div>
         <div class="card"><h3>Staff Performance</h3><div id="anaStaff"></div></div>
         <div class="card"><h3>Sheets Sync Log</h3><div id="anaSync" style="font-size:13px;color:var(--faint);">Set <code>WEB_APP_URL</code> in <strong>both</strong> pbis-portal.html and pbis-admin.html to activate: live Google Sheets storage, cross-device sync (polls every 25s), attachment backup to Drive, and an email notification to artmedia@pbis.edu.la on every new request. See the Apps Script modal for the full setup script and instructions.</div></div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section id="view-projects" class="view hidden">
+        <div class="view-title">
+          <div><h1>Projects &amp; Campaigns</h1><p>Group related requests and track overall progress</p></div>
+          <button class="btn btn-gold" id="addProjectBtn"><i class="ti ti-plus"></i> New Project</button>
+        </div>
+        <div id="projectGrid" class="project-grid"></div>
       </section>
 
       <!-- RECURRING -->
@@ -565,10 +601,28 @@ gsap.fromTo('#loginCard', {y:24}, {y:0, duration:1, ease:'power3.out', delay:.2}
 const STORE_KEY = 'pbis-requests';
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywVAPTqjjKGDSEusV6-mt15nPwxivlC-bfRtK4qh1HafJFtsbg0Y3VkVKoXK1q3n_FrQ/exec'; // live: PBIS Artmedia Sheets backend
 
-const STAFF = [
-  {name:'Simon'},{name:'Top'},{name:'Nuza'},{name:'Lane'},{name:'Mooping'},
-  {name:'Tobee'},{name:'Kop'},{name:'Noy'},{name:'Tophy'},{name:'Yos'}
+/* Departments are first-class: a brief is triaged to a DEPARTMENT first, then to a
+   person inside it. Marketing both routes work and executes some of it themselves. */
+const DEPARTMENTS = [
+  {id:'media',     name:'Artmedia',                icon:'ti-camera',       color:'var(--gold-l)'},
+  {id:'marketing', name:'Marketing',               icon:'ti-speakerphone', color:'var(--emerald-l)'},
+  {id:'comms',     name:'Corporate Communications',icon:'ti-building-bank',color:'var(--blue)'}
 ];
+const DEPT_LABEL = id => (DEPARTMENTS.find(d=>d.id===id)||{}).name || 'Unassigned';
+
+const STAFF = [
+  {name:'Simon',   dept:'media'},
+  {name:'Top',     dept:'marketing'},
+  {name:'Nuza',    dept:'media'},
+  {name:'Lane',    dept:'media'},
+  {name:'Mooping', dept:'media'},
+  {name:'Tobee',   dept:'media'},
+  {name:'Kop',     dept:'marketing'},
+  {name:'Noy',     dept:'marketing'},
+  {name:'Tophy',   dept:'media'},
+  {name:'Yos',     dept:'comms'}
+];
+const staffInDept = id => STAFF.filter(s=>s.dept===id);
 const TASK_LIMIT = 10;
 
 const ACCOUNTS = {
@@ -620,23 +674,104 @@ function timeLeft(req){
   const h = Math.floor(diff/36e5), m = Math.floor((diff%36e5)/6e4);
   return {h,m,urgent: h < 12, expired:false};
 }
-function pushSync(req){ syncUpsert(req); }
-function syncUpsert(reqObj){
+/* ============================================================
+   DURABLE OUTBOX — every write is queued, retried, and never silently lost.
+   Apps Script has no CORS preflight support, so responses are opaque; we treat
+   a resolved fetch as delivered and retry anything that rejects, with backoff.
+   The queue survives refreshes, crashes and offline periods via localStorage.
+   ============================================================ */
+const OUTBOX_KEY = 'pbis-outbox';
+let outboxFlushing = false;
+let outboxBackoff = 0;
+
+function loadOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)) || []; }catch(e){ return []; } }
+function saveOutbox(q){ try{ localStorage.setItem(OUTBOX_KEY, JSON.stringify(q)); }catch(e){ console.warn('Outbox full', e); } }
+function outboxCount(){ return loadOutbox().length; }
+
+function enqueue(action, payload, id, extra){
   if(!WEB_APP_URL) return;
-  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'upsert', payload:reqObj})}).catch(()=>{});
+  const q = loadOutbox();
+  // Collapse superseded writes: only the newest state of a record needs to reach the
+  // sheet, so an older queued upsert for the same id+action is redundant.
+  const key = (action === 'delete') ? 'del:'+id
+            : extra ? action
+            : action+':'+(payload && payload.id);
+  const idx = q.findIndex(item => item.key === key);
+  const entry = {key, action, payload, id, extra, tries:0, queuedAt:Date.now()};
+  if(idx >= 0 && action !== 'deliver' && action !== 'reschedule') q[idx] = entry;
+  else q.push(entry);
+  saveOutbox(q);
+  renderSyncBadge();
+  flushOutbox();
 }
-function syncReschedule(reqObj){
-  if(!WEB_APP_URL) return;
-  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'reschedule', payload:reqObj})}).catch(()=>{});
+
+async function sendOne(item){
+  const body = (item.action === 'delete')
+    ? JSON.stringify({action:'delete', id:item.id})
+    : item.extra
+      ? JSON.stringify(Object.assign({action:item.action}, item.extra))
+      : JSON.stringify({action:item.action, payload:item.payload});
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 12000);
+  try{
+    await fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body, signal: controller.signal});
+    return true;
+  }catch(e){
+    return false;
+  }finally{ clearTimeout(timer); }
 }
-function syncDelivery(reqObj){
-  if(!WEB_APP_URL) return;
-  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'deliver', payload:reqObj})}).catch(()=>{});
+
+async function flushOutbox(){
+  if(outboxFlushing || !WEB_APP_URL) return;
+  if(!navigator.onLine){ renderSyncBadge(); return; }
+  let q = loadOutbox();
+  if(!q.length) return;
+  outboxFlushing = true;
+  while(q.length){
+    const item = q[0];
+    const ok = await sendOne(item);
+    q = loadOutbox();
+    if(ok){
+      q = q.filter(x => x.key !== item.key || x.queuedAt !== item.queuedAt);
+      saveOutbox(q);
+      outboxBackoff = 0;
+    } else {
+      item.tries = (item.tries||0) + 1;
+      if(item.tries >= 8){
+        // Give up on this one item rather than blocking the whole queue forever,
+        // but make the failure loud instead of silent.
+        console.error('Write failed permanently after 8 attempts:', item);
+        toast('A change could not be saved to the sheet — check connection','cloud-x');
+        q = q.filter(x => !(x.key === item.key && x.queuedAt === item.queuedAt));
+      }
+      saveOutbox(q);
+      outboxBackoff = Math.min(60000, (outboxBackoff || 2000) * 2);
+      outboxFlushing = false;
+      renderSyncBadge();
+      setTimeout(flushOutbox, outboxBackoff);
+      return;
+    }
+  }
+  outboxFlushing = false;
+  renderSyncBadge();
+  // Reconcile right after a successful drain so the UI reflects the sheet's truth.
+  fetchRemote().then(changed=>{ if(changed) renderAll(); });
 }
-function syncDelete(id){
-  if(!WEB_APP_URL) return;
-  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'delete', id:id})}).catch(()=>{});
-}
+
+function pushSync(req){ enqueue('upsert', req); }
+function syncUpsert(reqObj){ enqueue('upsert', reqObj); }
+function syncReschedule(reqObj){ enqueue('reschedule', reqObj); }
+function syncDelivery(reqObj){ enqueue('deliver', reqObj); }
+function syncDelete(id){ enqueue('delete', null, id); }
+
+/* Cross-tab live updates: a change in one tab repaints every other open tab instantly. */
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('pbis-sync') : null;
+function broadcastChange(){ if(bc) bc.postMessage({t:Date.now()}); }
+if(bc){ bc.onmessage = ()=>{ try{ renderAll(); }catch(e){} }; }
+window.addEventListener('storage', e=>{
+  if(e.key === STORE_KEY){ try{ renderAll(); }catch(err){} }
+});
+
 let syncState = 'local';           // local | syncing | synced | offline
 let lastSyncedAt = +(localStorage.getItem('pbis-last-synced') || 0);
 let syncInFlight = false;
@@ -679,6 +814,13 @@ async function fetchRemote(showToast){
           }
         });
         saveStore(merged);
+        // Mirror tabs come back too, so projects/recurring follow you across devices.
+        if(Array.isArray(data.projects) && data.projects.length){
+          localStorage.setItem(PROJECTS_KEY, JSON.stringify(data.projects));
+        }
+        if(Array.isArray(data.recurring) && data.recurring.length){
+          localStorage.setItem(RECUR_KEY, JSON.stringify(data.recurring));
+        }
         lastSyncedAt = Date.now();
         localStorage.setItem('pbis-last-synced', String(lastSyncedAt));
         syncState = 'synced';
@@ -713,6 +855,11 @@ function renderSyncBadge(){
   const el = document.getElementById('syncBadge');
   if(!el) return;
   let icon, color, label;
+  const pending = outboxCount();
+  if(pending > 0){
+    el.innerHTML = `<i class="ti ti-cloud-upload" style="color:var(--amber);"></i> <span style="color:var(--amber);">Saving ${pending} change${pending===1?'':'s'}…</span>`;
+    return;
+  }
   if(syncState === 'synced'){
     icon='ti-cloud-check'; color='var(--emerald-l)'; label='Live · synced ' + syncAgoLabel();
   } else if(syncState === 'syncing'){
@@ -785,13 +932,43 @@ function boot(){
   renderSyncBadge();
   renderAll();
   fetchRemote().then(changed=>{ if(changed) renderAll(); });
-  setInterval(()=>fetchRemote().then(changed=>{ if(changed) renderAll(); }), 25*1000);
-  // Keep the "synced Xs ago" label honest without re-rendering the whole dashboard.
-  setInterval(renderSyncBadge, 10*1000);
-  // Reconcile the moment the tab regains focus or the network returns.
-  window.addEventListener('online', ()=>fetchRemote().then(changed=>{ if(changed) renderAll(); }));
+  flushOutbox();
+
+  // Adaptive polling: fast while someone is actually looking at the dashboard,
+  // slow in a background tab so we don't burn Apps Script quota for nothing.
+  let pollTimer = null;
+  function startPolling(){
+    if(pollTimer) clearInterval(pollTimer);
+    const ms = document.hidden ? 60000 : 8000;
+    pollTimer = setInterval(()=>{
+      fetchRemote().then(changed=>{ if(changed) renderAll(); });
+      flushOutbox();
+    }, ms);
+  }
+  startPolling();
+  setInterval(renderSyncBadge, 5000);
+  // Keep the sheet's mirror tabs current without hammering Apps Script.
+  setTimeout(pushMirrors, 5000);
+  setInterval(pushMirrors, 5*60*1000);
+
+  // Reconcile instantly on focus / reconnect rather than waiting for the next poll.
   document.addEventListener('visibilitychange', ()=>{
-    if(!document.hidden) fetchRemote().then(changed=>{ if(changed) renderAll(); });
+    startPolling();
+    if(!document.hidden){
+      fetchRemote().then(changed=>{ if(changed) renderAll(); });
+      flushOutbox();
+    }
+  });
+  window.addEventListener('online', ()=>{
+    outboxBackoff = 0;
+    toast('Back online — syncing','wifi');
+    flushOutbox();
+    fetchRemote().then(changed=>{ if(changed) renderAll(); });
+  });
+  window.addEventListener('offline', ()=>{ syncState='offline'; renderSyncBadge(); });
+  // Last-chance flush if someone closes the tab with writes still queued.
+  window.addEventListener('beforeunload', e=>{
+    if(outboxCount() > 0){ e.preventDefault(); e.returnValue = ''; }
   });
   try{ runRecurring(); }catch(err){ console.error('Recurring run failed:', err); }
   initIdleLogout();
@@ -949,11 +1126,146 @@ function findDuplicates(rec){
 }
 
 /* ============================================================
+   PROJECTS / CAMPAIGNS — group requests, roll up progress
+   ============================================================ */
+const PROJECTS_KEY = 'pbis-projects';
+function loadProjects(){ try{ return JSON.parse(localStorage.getItem(PROJECTS_KEY)) || []; }catch(e){ return []; } }
+function saveProjects(list){
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
+  enqueue('syncProjects', null, null, {projects:list});
+  broadcastChange();
+}
+
+function setRequestProject(id, projectId){
+  updateReq(id, {projectId: projectId || null});
+  toast(projectId ? 'Added to project' : 'Removed from project','folders');
+}
+function setOwnerDept(id, deptId){
+  const store = loadStore();
+  const r = store[id];
+  if(!r) return;
+  const patch = {ownerDept: deptId};
+  // Re-triaging to a different department clears an assignee who no longer belongs to it.
+  if(r.assigned){
+    const st = STAFF.find(x=>x.name===r.assigned);
+    if(!st || st.dept !== deptId) patch.assigned = null;
+  }
+  updateReq(id, patch);
+  toast('Triaged to ' + DEPT_LABEL(deptId),'route');
+  openDetail(id);
+}
+
+function projectStats(p){
+  const reqs = allRequests().filter(r=>r.projectId === p.id && r.status !== 'Trash');
+  const done = reqs.filter(r=>r.status === 'Completed').length;
+  const declined = reqs.filter(r=>r.status === 'Declined').length;
+  const active = reqs.length - done - declined;
+  const pct = reqs.length ? Math.round(done / reqs.length * 100) : 0;
+  const overdue = reqs.filter(r=>r.deadline && r.status!=='Completed' && r.status!=='Declined' && new Date(r.deadline) < new Date()).length;
+  return {reqs, done, declined, active, pct, overdue};
+}
+
+document.getElementById('addProjectBtn').addEventListener('click', ()=>openProjectForm());
+
+function openProjectForm(editId){
+  const list = loadProjects();
+  const p = editId ? list.find(x=>x.id===editId) : {id:'', name:'', desc:'', owner:'', dept:'marketing', due:''};
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+      <div class="modal" id="modalCard" style="max-width:520px;">
+        <div class="modal-head"><h2>${editId?'Edit':'New'} Project</h2><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div>
+        <div class="modal-body">
+          <div class="dfield" style="margin-bottom:14px;"><div class="dl">Project / Campaign Name</div><input id="pjName" value="${escHtml(p.name)}" placeholder="e.g. Open Day 2026 Campaign" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+          <div class="dfield" style="margin-bottom:14px;"><div class="dl">Description</div><textarea id="pjDesc" style="width:100%;min-height:60px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;background:var(--panel2);color:var(--platinum);font-family:inherit;font-size:13px;">${escHtml(p.desc)}</textarea></div>
+          <div class="dgrid" style="margin-bottom:14px;">
+            <div class="dfield"><div class="dl">Lead Department</div><select id="pjDept" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">${DEPARTMENTS.map(d=>`<option value="${d.id}" ${p.dept===d.id?'selected':''}>${d.name}</option>`).join('')}</select></div>
+            <div class="dfield"><div class="dl">Project Owner</div><select id="pjOwner" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"><option value="">Unassigned</option>${STAFF.map(x=>`<option value="${x.name}" ${p.owner===x.name?'selected':''}>${x.name}</option>`).join('')}</select></div>
+          </div>
+          <div class="dfield" style="margin-bottom:16px;"><div class="dl">Target Completion</div><input type="date" id="pjDue" value="${p.due||''}" style="width:100%;min-height:42px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);"></div>
+          <div class="modal-actions" style="margin-top:0;padding-top:16px;">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            ${editId?`<button class="btn btn-red" onclick="deleteProject('${editId}')"><i class="ti ti-trash"></i> Delete</button>`:''}
+            <button class="btn btn-gold" onclick="saveProject('${editId||''}')"><i class="ti ti-check"></i> Save Project</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  try{ gsap.fromTo('#modalBg',{opacity:0},{opacity:1,duration:.2}); gsap.fromTo('#modalCard',{opacity:0,y:20,scale:.97},{opacity:1,y:0,scale:1,duration:.35,ease:'power3.out'}); }catch(e){}
+}
+
+function saveProject(editId){
+  const name = document.getElementById('pjName').value.trim();
+  if(!name){ alert('Project name is required.'); return; }
+  const list = loadProjects();
+  const data = {
+    id: editId || ('PJ-' + Date.now().toString(36).toUpperCase()),
+    name,
+    desc: document.getElementById('pjDesc').value.trim(),
+    dept: document.getElementById('pjDept').value,
+    owner: document.getElementById('pjOwner').value,
+    due: document.getElementById('pjDue').value
+  };
+  const i = list.findIndex(x=>x.id===editId);
+  if(i >= 0) list[i] = data; else list.push(data);
+  saveProjects(list);
+  closeModal(); toast('Project saved','folders'); renderProjects();
+}
+function deleteProject(id){
+  if(!confirm('Delete this project? Its requests will become standalone again.')) return;
+  saveProjects(loadProjects().filter(p=>p.id!==id));
+  const store = loadStore();
+  Object.values(store).forEach(r=>{ if(r.projectId===id) r.projectId = null; });
+  saveStore(store);
+  closeModal(); toast('Project deleted','trash'); renderAll();
+}
+
+function renderProjects(){
+  const el = document.getElementById('projectGrid');
+  if(!el) return;
+  const list = loadProjects();
+  if(!list.length){
+    el.innerHTML = '<p style="color:var(--faint);font-size:13.5px;">No projects yet. Create one to group related requests into a campaign.</p>';
+    return;
+  }
+  el.innerHTML = list.map(p=>{
+    const st = projectStats(p);
+    const dept = DEPARTMENTS.find(d=>d.id===p.dept) || DEPARTMENTS[0];
+    const daysLeft = p.due ? Math.ceil((new Date(p.due) - new Date())/864e5) : null;
+    const dueCls = daysLeft !== null && daysLeft < 0 ? 'color:var(--red);' : (daysLeft !== null && daysLeft <= 7 ? 'color:var(--amber);' : 'color:var(--faint);');
+    return `<div class="project-card">
+      <div class="pj-head">
+        <div>
+          <div class="pj-dept" style="color:${dept.color};"><i class="ti ${dept.icon}"></i> ${dept.name}</div>
+          <h4>${escHtml(p.name)}</h4>
+          ${p.desc?`<p class="pj-desc">${escHtml(p.desc)}</p>`:''}
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openProjectForm('${p.id}')"><i class="ti ti-pencil"></i></button>
+      </div>
+      <div class="pj-progress-wrap">
+        <div class="pj-progress-top"><span>${st.done} of ${st.reqs.length} complete</span><strong>${st.pct}%</strong></div>
+        <div class="pj-bar"><div class="pj-fill ${st.pct===100?'done':''}" style="width:${st.pct}%"></div></div>
+      </div>
+      <div class="pj-meta">
+        <span><i class="ti ti-player-play"></i> ${st.active} active</span>
+        ${st.overdue?`<span style="color:var(--red);"><i class="ti ti-alert-triangle"></i> ${st.overdue} overdue</span>`:''}
+        ${p.owner?`<span><i class="ti ti-user"></i> ${escHtml(p.owner)}</span>`:''}
+        ${p.due?`<span style="${dueCls}"><i class="ti ti-flag"></i> ${p.due}${daysLeft!==null?` (${daysLeft<0?Math.abs(daysLeft)+'d over':daysLeft+'d left'})`:''}</span>`:''}
+      </div>
+      ${st.reqs.length?`<div class="pj-reqs">${st.reqs.slice(0,6).map(r=>`<div class="pj-req" onclick="openDetail('${r.id}')"><span class="pj-req-id">${r.id}</span><span class="pj-req-title">${escHtml(r.title)}</span>${statusBadge(r.status)}</div>`).join('')}${st.reqs.length>6?`<div style="font-size:11px;color:var(--faint);padding:6px 0 0;">+${st.reqs.length-6} more</div>`:''}</div>`:'<p style="font-size:12px;color:var(--faint);margin:10px 0 0;">No requests linked yet — assign requests to this project from their detail view.</p>'}
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
    RECURRING REQUEST TEMPLATES
    ============================================================ */
 const RECUR_KEY = 'pbis-recurring';
 function loadRecurring(){ try{ return JSON.parse(localStorage.getItem(RECUR_KEY)) || []; }catch(e){ return []; } }
-function saveRecurring(list){ localStorage.setItem(RECUR_KEY, JSON.stringify(list)); }
+function saveRecurring(list){
+  localStorage.setItem(RECUR_KEY, JSON.stringify(list));
+  enqueue('syncRecurring', null, null, {templates:list});
+  broadcastChange();
+}
 
 document.getElementById('addRecurringBtn').addEventListener('click', ()=>openRecurringForm());
 
@@ -1089,7 +1401,7 @@ function renderAll(){
   const sections = [
     ['autoTrash', autoTrash], ['dashboard', renderDashboard], ['requests', renderRequests],
     ['staff', renderStaffGrid], ['calendar', renderProdCalendar],
-    ['analytics', renderAnalytics], ['trash', renderTrash], ['archive', renderArchive], ['recurring', renderRecurring]
+    ['analytics', renderAnalytics], ['trash', renderTrash], ['archive', renderArchive], ['recurring', renderRecurring], ['projects', renderProjects]
   ];
   sections.forEach(([name, fn])=>{
     try{ fn(); }catch(err){ console.error('Render failed in section:', name, err); }
@@ -1465,19 +1777,33 @@ function openDetail(id){
           <div class="note-add"><textarea id="noteInput" placeholder="Add a note for the team…"></textarea><button type="button" class="btn btn-outline btn-sm" onclick="addNote('${id}')" style="align-self:flex-end;"><i class="ti ti-send"></i></button></div>
         </div>
         ${canManage && r.status!=='Trash' ? `
-        <div class="dfield" style="margin-bottom:8px;"><div class="dl">Assign to Staff</div>
-          <select id="assignSelect" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);">
-            <option value="">Unassigned</option>${staffOptions}
+        <div class="dfield" style="margin-bottom:14px;">
+          <div class="dl">Triage — Owning Department</div>
+          <div class="dept-pick" id="deptPick">
+            ${DEPARTMENTS.map(d=>`<button type="button" class="dept-btn ${r.ownerDept===d.id?'active':''}" data-dept="${d.id}" onclick="setOwnerDept('${id}','${d.id}')"><i class="ti ${d.icon}"></i> ${d.name}</button>`).join('')}
+          </div>
+          ${r.ownerDept ? '' : '<p style="font-size:11.5px;color:var(--amber);margin:8px 0 0;"><i class="ti ti-alert-circle"></i> Not yet triaged — pick the department that will own this work.</p>'}
+        </div>
+        <div class="dfield" style="margin-bottom:8px;"><div class="dl">Assign to Person${r.ownerDept?` <span style="font-weight:400;text-transform:none;color:var(--faint);">in ${DEPT_LABEL(r.ownerDept)}</span>`:''}</div>
+          <select id="assignSelect" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;background:var(--panel2);color:var(--platinum);" ${r.ownerDept?'':'disabled'}>
+            <option value="">${r.ownerDept ? 'Unassigned' : 'Triage to a department first'}</option>${r.ownerDept ? staffInDept(r.ownerDept).map(st=>`<option value="${st.name}" ${r.assigned===st.name?'selected':''}>${st.name} (${staffCount[st.name]||0}/${TASK_LIMIT})</option>`).join('') : ''}
           </select>
         </div>
         <button class="btn btn-outline btn-sm" onclick="assignReq('${id}')" style="margin-bottom:6px;"><i class="ti ti-user-check"></i> Save Assignment</button>
+        <div class="dfield" style="margin-bottom:14px;">
+          <div class="dl">Project / Campaign</div>
+          <select id="projectSelect" onchange="setRequestProject('${id}', this.value)" style="width:100%;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;min-height:42px;background:var(--panel2);color:var(--platinum);">
+            <option value="">— Standalone request —</option>
+            ${loadProjects().map(p=>`<option value="${p.id}" ${r.projectId===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('')}
+          </select>
+        </div>
         <div class="dfield" style="margin-top:18px;">
           <div class="dl">Support Staff <span style="font-weight:400;text-transform:none;color:var(--faint);">(helping out, doesn't count toward their task limit)</span></div>
           <div class="support-chips" id="supportChips">${(r.supportStaff&&r.supportStaff.length) ? r.supportStaff.map(n=>`<span class="support-chip">${escHtml(n)}<button type="button" onclick="removeSupportStaff('${id}','${escHtml(n).replace(/'/g,"&#39;")}')"><i class="ti ti-x"></i></button></span>`).join('') : '<span style="font-size:12px;color:var(--faint);">No support staff added.</span>'}</div>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <select id="supportSelect" style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:0 12px;min-height:40px;background:var(--panel2);color:var(--platinum);">
               <option value="">Select staff to support…</option>
-              ${STAFF.filter(s=>s.name!==r.assigned && !(r.supportStaff||[]).includes(s.name)).map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
+              ${DEPARTMENTS.map(d=>{const opts=staffInDept(d.id).filter(s=>s.name!==r.assigned && !(r.supportStaff||[]).includes(s.name));return opts.length?`<optgroup label="${d.name}">${opts.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}</optgroup>`:'';}).join('')}
             </select>
             <button class="btn btn-outline btn-sm" onclick="addSupportStaff('${id}')"><i class="ti ti-plus"></i> Add</button>
           </div>
@@ -1603,7 +1929,8 @@ function updateReq(id, patch, skipRender){
   }
   Object.assign(store[id], patch, {lastUpdated:new Date().toISOString()});
   saveStore(store);          // local write first — the UI must never wait on the network
-  pushSync(store[id]);       // fire-and-forget to the sheet
+  pushSync(store[id]);       // queued to the durable outbox, retried until delivered
+  broadcastChange();         // other open tabs repaint immediately
   if(!skipRender) renderAll();
 }
 function addNote(id){
@@ -2061,6 +2388,32 @@ document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
   toast('CSV exported','download');
 });
 
+document.getElementById('backupNowBtn').addEventListener('click', function(){
+  if(!WEB_APP_URL){ toast('No Sheets URL configured','cloud-off'); return; }
+  if(!confirm('Create a timestamped backup copy of the whole spreadsheet in Drive?')) return;
+  this.disabled = true; this.innerHTML = '<i class="ti ti-loader-2"></i> Backing up…';
+  const btn = this;
+  fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({action:'backup', by: currentUser.name})})
+    .catch(()=>{})
+    .finally(()=>{
+      setTimeout(()=>{
+        btn.disabled = false; btn.innerHTML = '<i class="ti ti-database-export"></i> Back Up Now';
+        toast('Backup requested — check the Backup Log tab','database-export');
+      }, 2500);
+    });
+});
+
+/** Pushes derived tabs (projects, recurring, workload, activity) to the sheet so the
+ *  spreadsheet stays a full mirror of the dashboard, not just a request log. */
+function pushMirrors(){
+  if(!WEB_APP_URL) return;
+  enqueue('syncMirrors', null, null, {
+    projects: loadProjects(),
+    templates: loadRecurring(),
+    staff: STAFF
+  });
+}
+
 document.getElementById('appsScriptBtn').addEventListener('click', showAppsScriptModal);
 function showAppsScriptModal(){
   const script = `/**
@@ -2093,6 +2446,8 @@ const CONFIG = {
   DRIVE_FOLDER_ID: '',                     // optional: paste a Drive folder ID to store attachments there
   ADMIN_URL: 'https://sompasertritthisak-ui.github.io/ArtMedia-Portal/admin/', // shown as a button in the email
   BRAND: 'PBIS Artmedia',
+  BACKUP_FOLDER_ID: '',                    // optional: Drive folder ID for backups (blank = My Drive)
+  BACKUP_KEEP: 30,                         // how many timestamped backups to retain
   COLORS: {
     obsidian: '#0a0c14',
     gold: '#c9a84c',
@@ -2116,6 +2471,9 @@ function onOpen(){
     .createMenu('PBIS Artmedia')
     .addItem('Format / Setup Sheet', 'setupSheet')
     .addItem('Run Auto-Trash Now', 'checkAutoTrash')
+    .addSeparator()
+    .addItem('Rebuild Activity Log', 'syncActivityTab')
+    .addItem('Back Up Now', 'backupNowFromMenu')
     .addToUi();
 }
 
@@ -2173,7 +2531,23 @@ function setupSheet(){
   SpreadsheetApp.flush();
 }
 
-const HEADERS = ['ID','Title','Category','Type','Department','Requestor','Email','Phone','Priority','Status','Deadline','Event Date','Location','Deliverables','Description','Assigned To','Submitted','Attachments','Trashed At','Last Updated','Payload JSON'];
+const HEADERS = ['ID','Title','Category','Type','Department','Owning Dept','Project','Requestor','Email','Phone','Priority','Status','Deadline','Event Date','Location','Deliverables','Description','Assigned To','Support Staff','Submitted','Attachments','Delivered Files','Rating','Trashed At','Last Updated','Payload JSON'];
+
+/* Every dashboard tab has a matching sheet tab, so the spreadsheet is a complete
+   mirror of the system rather than just a request log. */
+const TABS = {
+  requests:  'Requests',
+  projects:  'Projects',
+  recurring: 'Recurring',
+  activity:  'Activity Log',
+  workload:  'Staff Workload',
+  backups:   'Backup Log'
+};
+const PROJECT_HEADERS   = ['Project ID','Name','Description','Lead Department','Owner','Target Date','Linked Requests','Completed','Progress %','Last Updated'];
+const RECURRING_HEADERS = ['Title','Category','Type','Department','Cadence','Next Run','Auto-Assign','Lead Days','Description','Deliverables','Last Updated'];
+const ACTIVITY_HEADERS  = ['Timestamp','Request ID','Request Title','Changed By','Role','Change'];
+const WORKLOAD_HEADERS  = ['Staff','Department','Open Tasks','Supporting','Completed (all time)','Avg Turnaround (days)','Last Updated'];
+const BACKUP_HEADERS    = ['Timestamp','Backup File','Records','Triggered By','Drive Link'];
 
 function doGet(e){
   const action = e.parameter.action || 'list';
@@ -2188,7 +2562,7 @@ function doGet(e){
       if(!raw) continue;
       try{ requests.push(JSON.parse(raw)); }catch(err){ /* skip malformed row */ }
     }
-    return jsonOut({requests});
+    return jsonOut({requests, projects: readTabObjects(TABS.projects, PROJECT_HEADERS, 'project'), recurring: readTabObjects(TABS.recurring, RECURRING_HEADERS, 'recurring')});
   }
   if(action === 'track'){
     // Public lookup used by the portal's "Track Request" section.
@@ -2270,6 +2644,26 @@ function doPost(e){
     return jsonOut({ok:true});
   }
 
+  if(action === 'syncProjects'){
+    syncProjectsTab(body.projects || []);
+    return jsonOut({ok:true});
+  }
+  if(action === 'syncRecurring'){
+    syncRecurringTab(body.templates || []);
+    return jsonOut({ok:true});
+  }
+  if(action === 'syncMirrors'){
+    // Called periodically by the dashboard so derived tabs stay current.
+    if(body.projects) syncProjectsTab(body.projects);
+    if(body.templates) syncRecurringTab(body.templates);
+    if(body.staff) syncWorkloadTab(body.staff);
+    syncActivityTab();
+    return jsonOut({ok:true});
+  }
+  if(action === 'backup'){
+    const url = runBackup(body.by || 'Dashboard');
+    return jsonOut({ok:true, url:url});
+  }
   if(action === 'addNote'){
     // Requestor-sent message. Requires the same id+email proof as track lookups so a stray
     // ID can't be used to post notes onto someone else's request.
@@ -2387,6 +2781,8 @@ function upsertRow(sheetName, payload, keyCol){
       case 'Category': return payload.cat;
       case 'Type': return payload.type;
       case 'Department': return payload.dept;
+      case 'Owning Dept': return payload.ownerDept || '';
+      case 'Project': return payload.projectId || '';
       case 'Requestor': return payload.name;
       case 'Email': return payload.email;
       case 'Phone': return payload.phone;
@@ -2398,8 +2794,11 @@ function upsertRow(sheetName, payload, keyCol){
       case 'Deliverables': return payload.deliverables;
       case 'Description': return payload.desc;
       case 'Assigned To': return payload.assigned;
+      case 'Support Staff': return (payload.supportStaff||[]).join(', ');
       case 'Submitted': return payload.date;
       case 'Attachments': return (payload.atts||[]).map(function(a){return a.name;}).join(', ');
+      case 'Delivered Files': return (payload.deliveryFiles||[]).map(function(a){return a.name;}).join(', ');
+      case 'Rating': return payload.rating || '';
       case 'Trashed At': return payload.trashedAt;
       case 'Last Updated': return new Date();
       case 'Payload JSON': return JSON.stringify(payload);
@@ -2412,6 +2811,176 @@ function upsertRow(sheetName, payload, keyCol){
   sheet.getRange(rowIdx,1,1,row.length).setHorizontalAlignment('center').setVerticalAlignment('middle');
   colorRow(sheet, rowIdx, payload.status);
   return {isNew: isNew, oldStatus: oldStatus, oldDeadline: oldDeadline, oldEvdate: oldEvdate};
+}
+
+/** Reads a mirror tab back into objects so projects/recurring sync across devices. */
+function readTabObjects(tabName, headers, kind){
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(tabName);
+  if(!sheet || sheet.getLastRow() < 2) return [];
+  const data = sheet.getDataRange().getValues();
+  const out = [];
+  for(let i=1; i<data.length; i++){
+    const row = data[i];
+    if(!row[0] && !row[1]) continue;
+    if(kind === 'project'){
+      out.push({id:String(row[0]), name:String(row[1]), desc:String(row[2]||''), dept:String(row[3]||''),
+                owner:String(row[4]||''), due: row[5] ? formatDateOnly(row[5]) : ''});
+    } else {
+      out.push({title:String(row[0]), cat:String(row[1]), type:String(row[2]), dept:String(row[3]),
+                cadence:String(row[4]), nextRun: row[5] ? formatDateOnly(row[5]) : '',
+                assign:String(row[6]||''), leadDays:Number(row[7])||0,
+                desc:String(row[8]||''), deliverables:String(row[9]||'')});
+    }
+  }
+  return out;
+}
+function formatDateOnly(v){
+  if(v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return String(v).slice(0,10);
+}
+
+/* ============================================================
+   MIRROR TABS — Projects, Recurring, Activity Log, Staff Workload
+   ============================================================ */
+function getTab(name, headers){
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(name);
+  if(!sheet){ sheet = ss.insertSheet(name); }
+  if(sheet.getLastRow() === 0){
+    sheet.appendRow(headers);
+    sheet.getRange(1,1,1,headers.length)
+      .setBackground(CONFIG.COLORS.obsidian).setFontColor(CONFIG.COLORS.gold)
+      .setFontWeight('bold').setFontFamily('Georgia').setFontSize(10)
+      .setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+    sheet.setFrozenRows(1);
+    sheet.setTabColor(CONFIG.COLORS.gold);
+  }
+  return sheet;
+}
+
+/** Replaces a whole mirror tab's body with fresh rows (these collections are small). */
+function replaceTabBody(name, headers, rows){
+  const sheet = getTab(name, headers);
+  const last = sheet.getLastRow();
+  if(last > 1) sheet.getRange(2,1,last-1,sheet.getLastColumn()).clearContent();
+  if(rows.length){
+    sheet.getRange(2,1,rows.length,headers.length).setValues(rows)
+      .setHorizontalAlignment('center').setVerticalAlignment('middle')
+      .setFontFamily('Georgia').setFontSize(10);
+  }
+  return sheet;
+}
+
+function syncProjectsTab(projects){
+  const all = readAllPayloads();
+  const rows = (projects||[]).map(function(p){
+    const linked = all.filter(function(r){ return r.projectId === p.id && r.status !== 'Trash'; });
+    const done = linked.filter(function(r){ return r.status === 'Completed'; }).length;
+    const pct = linked.length ? Math.round(done/linked.length*100) : 0;
+    return [p.id, p.name, p.desc||'', p.dept||'', p.owner||'', p.due||'',
+            linked.map(function(r){return r.id;}).join(', '), done, pct, new Date()];
+  });
+  replaceTabBody(TABS.projects, PROJECT_HEADERS, rows);
+}
+
+function syncRecurringTab(templates){
+  const rows = (templates||[]).map(function(t){
+    return [t.title, t.cat, t.type, t.dept, t.cadence, t.nextRun, t.assign||'',
+            t.leadDays||0, t.desc||'', t.deliverables||'', new Date()];
+  });
+  replaceTabBody(TABS.recurring, RECURRING_HEADERS, rows);
+}
+
+/** Rebuilds the Activity Log from every request's stored activity array. */
+function syncActivityTab(){
+  const all = readAllPayloads();
+  const rows = [];
+  all.forEach(function(r){
+    (r.activity||[]).forEach(function(a){
+      rows.push([new Date(a.ts), r.id, r.title||'', a.by||'', a.role||'', a.what||'']);
+    });
+  });
+  rows.sort(function(a,b){ return b[0] - a[0]; });
+  replaceTabBody(TABS.activity, ACTIVITY_HEADERS, rows.slice(0, 2000));
+}
+
+/** Recomputes the Staff Workload tab from live request data. */
+function syncWorkloadTab(staffList){
+  const all = readAllPayloads();
+  const isOpen = function(r){ return r.status!=='Completed' && r.status!=='Declined' && r.status!=='Trash'; };
+  const rows = (staffList||[]).map(function(st){
+    const open = all.filter(function(r){ return r.assigned===st.name && isOpen(r); }).length;
+    const sup  = all.filter(function(r){ return (r.supportStaff||[]).indexOf(st.name)>=0 && isOpen(r); }).length;
+    const done = all.filter(function(r){ return r.assigned===st.name && r.status==='Completed'; });
+    let avg = '';
+    if(done.length){
+      const total = done.reduce(function(sum,r){
+        return sum + Math.max(0, (new Date(r.lastUpdated||r.ts) - new Date(r.ts))/86400000);
+      },0);
+      avg = (total/done.length).toFixed(1);
+    }
+    return [st.name, st.dept||'', open, sup, done.length, avg, new Date()];
+  });
+  replaceTabBody(TABS.workload, WORKLOAD_HEADERS, rows);
+}
+
+function readAllPayloads(){
+  const sheet = getSheet(CONFIG.SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const jsonIdx = data[0].indexOf('Payload JSON');
+  const out = [];
+  for(let i=1; i<data.length; i++){
+    if(!data[i][jsonIdx]) continue;
+    try{ out.push(JSON.parse(data[i][jsonIdx])); }catch(err){ /* skip */ }
+  }
+  return out;
+}
+
+/* ============================================================
+   BACKUPS — timestamped copy of the whole spreadsheet into Drive
+   ============================================================ */
+function runBackup(triggeredBy){
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm');
+  const name = 'PBIS Artmedia Backup ' + stamp;
+  const folder = CONFIG.BACKUP_FOLDER_ID ? DriveApp.getFolderById(CONFIG.BACKUP_FOLDER_ID) : DriveApp.getRootFolder();
+  const copy = DriveApp.getFileById(ss.getId()).makeCopy(name, folder);
+  const count = readAllPayloads().length;
+
+  const log = getTab(TABS.backups, BACKUP_HEADERS);
+  log.appendRow([new Date(), name, count, triggeredBy || 'Manual', copy.getUrl()]);
+  log.getRange(log.getLastRow(),1,1,BACKUP_HEADERS.length)
+     .setHorizontalAlignment('center').setVerticalAlignment('middle');
+
+  pruneBackups(folder);
+  return copy.getUrl();
+}
+
+/** Keeps the most recent CONFIG.BACKUP_KEEP copies and trashes older ones. */
+function pruneBackups(folder){
+  const files = [];
+  const it = folder.getFilesByName ? folder.getFiles() : null;
+  if(!it) return;
+  while(it.hasNext()){
+    const f = it.next();
+    if(f.getName().indexOf('PBIS Artmedia Backup ') === 0) files.push(f);
+  }
+  files.sort(function(a,b){ return b.getDateCreated() - a.getDateCreated(); });
+  for(let i = CONFIG.BACKUP_KEEP; i < files.length; i++){ files[i].setTrashed(true); }
+}
+
+/** Attach this to a daily time-driven trigger. */
+function dailyBackup(){ runBackup('Daily auto-backup'); }
+function backupNowFromMenu(){
+  const url = runBackup('Manual (menu)');
+  SpreadsheetApp.getUi().alert('Backup complete.\n\nSaved to Drive:\n' + url);
+}
+
+/** Full mirror refresh — rebuilds every derived tab from live data. */
+function refreshAllTabs(){
+  syncActivityTab();
+  SpreadsheetApp.flush();
 }
 
 /** Verifies id+email match, then appends a requestor-authored note and re-saves via upsertRow. */
