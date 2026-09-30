@@ -55,6 +55,8 @@ button{cursor:pointer;}
 .login-field label{display:block;font-size:12px;color:var(--mist);margin-bottom:7px;font-weight:600;letter-spacing:.03em;}
 .login-field input{width:100%;min-height:48px;padding:11px 16px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;font-size:14px;transition:border-color .25s var(--ease),box-shadow .25s var(--ease);}
 .login-field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-dim);}
+.clear-login{background:none;border:none;color:var(--faint);font-size:11px;padding:6px 0 0;cursor:pointer;text-decoration:underline;}
+.clear-login:hover{color:var(--gold-l);}
 .login-err{color:#fca5a5;font-size:12.5px;margin:-8px 0 16px;display:none;}
 /* ===== SHELL ===== */
 #app{display:flex;min-height:100vh;}
@@ -338,8 +340,10 @@ select,input[type=text],input[type=date]{min-height:44px;}
     <h1>Artmedia Admin</h1>
     <p class="sub">Sign in to manage media requests</p>
     <form id="loginForm">
-      <div class="login-field"><label>Username</label><input type="text" id="loginUser" autocomplete="username" required></div>
-      <div class="login-field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password" required></div>
+      <div class="login-field"><label>Username</label><input type="text" id="loginUser" name="pbis-user" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required></div>
+      <div class="login-field"><label>Password</label><input type="password" id="loginPass" name="pbis-pass" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+        <button type="button" id="clearLoginBtn" class="clear-login">Clear fields</button>
+      </div>
       <div class="login-err" id="loginErr">Invalid username or password.</div>
       <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;min-height:50px;"><i class="ti ti-login"></i> Sign In</button>
     </form>
@@ -574,7 +578,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
    file and compares this value, so staff get told when their cached copy is stale
    instead of silently running an old build. Format: YYYY.MM.DD.build
    ============================================================ */
-const APP_VERSION = '2026.09.29.1';
+const APP_VERSION = '2026.09.29.2';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -945,6 +949,23 @@ function toast(msg,icon='circle-check'){
 /* ============================================================
    LOGIN
    ============================================================ */
+// Browsers ignore autocomplete="off" on password fields often enough that we also
+// clear anything injected after load — a stale saved password silently failing login
+// is indistinguishable from a wrong password, which is what tripped this up before.
+(function guardLoginFields(){
+  const u = document.getElementById('loginUser');
+  const p = document.getElementById('loginPass');
+  const clearBtn = document.getElementById('clearLoginBtn');
+  const wipe = ()=>{ u.value=''; p.value=''; u.focus(); };
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{
+    wipe();
+    const err = document.getElementById('loginErr');
+    err.style.display='none';
+  });
+  // Give the browser a beat to autofill, then clear it.
+  setTimeout(()=>{ if(p.value) p.value=''; }, 350);
+})();
+
 document.getElementById('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const u = document.getElementById('loginUser').value.trim();
@@ -955,14 +976,30 @@ document.getElementById('loginForm').addEventListener('submit', async e=>{
 
   // Throttle: PBKDF2 already makes each attempt costly, but this stops rapid scripted guessing.
   const lockedUntil = +(sessionStorage.getItem('pbis-login-lock') || 0);
+  if(lockedUntil && Date.now() >= lockedUntil){
+    // Lock has expired — clear it so the counter starts fresh.
+    sessionStorage.removeItem('pbis-login-lock');
+    sessionStorage.removeItem('pbis-login-fails');
+  }
   if(Date.now() < lockedUntil){
     err.textContent = `Too many failed attempts. Try again in ${Math.ceil((lockedUntil-Date.now())/1000)}s.`;
     err.style.color = '#fca5a5'; err.style.display = 'block';
     return;
   }
 
+  // Fail loudly if the crypto API is unavailable, rather than silently reporting
+  // "invalid password" — that made a broken environment look like a typo.
+  if(!(window.crypto && window.crypto.subtle)){
+    err.textContent = location.protocol === 'https:' || location.hostname === 'localhost'
+      ? 'Secure crypto unavailable in this browser. Please use an up-to-date Chrome, Safari, Edge or Firefox.'
+      : 'This page must be served over HTTPS (or localhost) to sign in. You are on ' + location.protocol + '//';
+    err.style.color = '#fca5a5'; err.style.display = 'block';
+    return;
+  }
+
   btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Verifying…';
   let valid = false;
+  let cryptoFailed = false;
   try{
     if(acc){
       const digest = await derivePasswordHash(p, acc.salt);
@@ -973,9 +1010,16 @@ document.getElementById('loginForm').addEventListener('submit', async e=>{
       await derivePasswordHash(p, '00000000000000000000000000000000');
     }
   }catch(cryptoErr){
+    cryptoFailed = true;
     console.error('Password verification failed:', cryptoErr);
   }
   btn.disabled = false; btn.innerHTML = '<i class="ti ti-login"></i> Sign In';
+
+  if(cryptoFailed){
+    err.textContent = 'Could not verify your password (browser crypto error). Please reload and try again.';
+    err.style.color = '#fca5a5'; err.style.display = 'block';
+    return;  // don't burn a login attempt on an environment fault
+  }
 
   if(valid){
     // Never persist the password itself — only the identity and a login timestamp.
@@ -2624,7 +2668,7 @@ function showAppsScriptModal(){
 const CONFIG = {
   SPREADSHEET_ID: '1WafEV6xSyzNTZ0ulRNGcgi0ZjZWJnSQnVi7DnugXVV8', // your PBIS Artmedia sheet
   SHEET_NAME: 'Requests',
-  EMAIL_TO: 'artmedia@pbis.edu.la,marketing-events@pbis.edu.la', // team notification recipients (comma-separated, no spaces)
+  EMAIL_TO: 'artmedia@pbis.edu.la',       // team notification recipients (comma-separated, no spaces)
   CONTACT_EMAIL: 'artmedia@pbis.edu.la', // the single public-facing address shown to requestors
   DRIVE_FOLDER_ID: '',                     // optional: paste a Drive folder ID to store attachments there
   ADMIN_URL: 'https://sompasertritthisak-ui.github.io/ArtMedia-Portal/admin/', // shown as a button in the email
