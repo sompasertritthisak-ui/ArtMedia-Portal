@@ -10,7 +10,8 @@
 <meta name="author" content="Panyathip British International School">
 <meta name="copyright" content="© 2026 Panyathip British International School. All rights reserved.">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" id="tablerCss" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
 :root{
   color-scheme: dark;
@@ -55,6 +56,12 @@ button{cursor:pointer;}
 .login-field label{display:block;font-size:12px;color:var(--mist);margin-bottom:7px;font-weight:600;letter-spacing:.03em;}
 .login-field input{width:100%;min-height:48px;padding:11px 16px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;font-size:14px;transition:border-color .25s var(--ease),box-shadow .25s var(--ease);}
 .login-field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-dim);}
+.pw-wrap{position:relative;display:flex;align-items:center;}
+.pw-wrap input{padding-right:46px!important;}
+.pw-toggle{position:absolute;right:8px;background:none;border:none;color:var(--faint);font-size:17px;cursor:pointer;padding:8px;line-height:1;transition:color .2s var(--ease);}
+.pw-toggle:hover{color:var(--gold-l);}
+.pw-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;min-height:18px;}
+.caps-warn{font-size:11px;color:var(--amber);display:inline-flex;align-items:center;gap:5px;}
 .clear-login{background:none;border:none;color:var(--faint);font-size:11px;padding:6px 0 0;cursor:pointer;text-decoration:underline;}
 .clear-login:hover{color:var(--gold-l);}
 .login-err{color:#fca5a5;font-size:12.5px;margin:-8px 0 16px;display:none;}
@@ -341,8 +348,15 @@ select,input[type=text],input[type=date]{min-height:44px;}
     <p class="sub">Sign in to manage media requests</p>
     <form id="loginForm">
       <div class="login-field"><label>Username</label><input type="text" id="loginUser" name="pbis-user" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required></div>
-      <div class="login-field"><label>Password</label><input type="password" id="loginPass" name="pbis-pass" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
-        <button type="button" id="clearLoginBtn" class="clear-login">Clear fields</button>
+      <div class="login-field"><label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPass" name="pbis-pass" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+          <button type="button" id="togglePw" class="pw-toggle" aria-label="Show password" title="Show password"><i class="ti ti-eye"></i></button>
+        </div>
+        <div class="pw-row">
+          <span id="capsWarn" class="caps-warn hidden"><i class="ti ti-arrow-big-up-line"></i> Caps Lock is on</span>
+          <button type="button" id="clearLoginBtn" class="clear-login">Clear fields</button>
+        </div>
       </div>
       <div class="login-err" id="loginErr">Invalid username or password.</div>
       <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;min-height:50px;"><i class="ti ti-login"></i> Sign In</button>
@@ -578,7 +592,7 @@ select,input[type=text],input[type=date]{min-height:44px;}
    file and compares this value, so staff get told when their cached copy is stale
    instead of silently running an old build. Format: YYYY.MM.DD.build
    ============================================================ */
-const APP_VERSION = '2026.09.29.2';
+const APP_VERSION = '2026.09.30.2';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -851,7 +865,7 @@ async function fetchRemote(showToast){
   if(!lastSyncedAt){ syncState = 'syncing'; renderSyncBadge(); }
 
   const controller = new AbortController();
-  const timer = setTimeout(()=>controller.abort(), 8000);
+  const timer = setTimeout(()=>controller.abort(), 15000);
   try{
     const res = await fetch(
       WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=list&t=' + Date.now(),
@@ -895,7 +909,7 @@ async function fetchRemote(showToast){
     }
   }catch(e){
     syncState = 'offline';
-    if(e.name === 'AbortError') console.warn('Sync timed out after 8s — showing last saved data.');
+    if(e.name === 'AbortError') console.warn('Sync timed out after 15s — showing last saved data.');
     else console.warn('Sync failed, showing last saved data:', e);
   }finally{
     clearTimeout(timer);
@@ -952,6 +966,31 @@ function toast(msg,icon='circle-check'){
 // Browsers ignore autocomplete="off" on password fields often enough that we also
 // clear anything injected after load — a stale saved password silently failing login
 // is indistinguishable from a wrong password, which is what tripped this up before.
+(function loginFieldHelpers(){
+  const pw = document.getElementById('loginPass');
+  const toggle = document.getElementById('togglePw');
+  const caps = document.getElementById('capsWarn');
+  if(toggle && pw){
+    toggle.addEventListener('click', ()=>{
+      const showing = pw.type === 'text';
+      pw.type = showing ? 'password' : 'text';
+      toggle.innerHTML = showing ? '<i class="ti ti-eye"></i>' : '<i class="ti ti-eye-off"></i>';
+      toggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+      pw.focus();
+    });
+  }
+  // Caps Lock silently capitalising the first character is exactly the kind of
+  // typo that reads as "wrong password" with no explanation.
+  if(pw && caps){
+    const check = e => {
+      const on = e.getModifierState && e.getModifierState('CapsLock');
+      caps.classList.toggle('hidden', !on);
+    };
+    pw.addEventListener('keydown', check);
+    pw.addEventListener('keyup', check);
+  }
+})();
+
 (function guardLoginFields(){
   const u = document.getElementById('loginUser');
   const p = document.getElementById('loginPass');
@@ -2699,6 +2738,7 @@ function onOpen(){
     .addItem('Format / Setup Sheet', 'setupSheet')
     .addItem('Run Auto-Trash Now', 'checkAutoTrash')
     .addSeparator()
+    .addItem('Repair / Realign Columns', 'repairSheet')
     .addItem('Rebuild Activity Log', 'syncActivityTab')
     .addItem('Back Up Now', 'backupNowFromMenu')
     .addToUi();
@@ -2779,16 +2819,8 @@ const BACKUP_HEADERS    = ['Timestamp','Backup File','Records','Triggered By','D
 function doGet(e){
   const action = e.parameter.action || 'list';
   if(action === 'list'){
-    const sheet = getSheet(CONFIG.SHEET_NAME);
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const jsonIdx = headers.indexOf('Payload JSON');
-    const requests = [];
-    for(let i=1; i<data.length; i++){
-      const raw = data[i][jsonIdx];
-      if(!raw) continue;
-      try{ requests.push(JSON.parse(raw)); }catch(err){ /* skip malformed row */ }
-    }
+    const light = e.parameter.light !== '0';   // default: omit base64 blobs
+    const requests = readAllPayloads().map(function(r){ return light ? stripHeavy(r) : r; });
     return jsonOut({requests, projects: readTabObjects(TABS.projects, PROJECT_HEADERS, 'project'), recurring: readTabObjects(TABS.recurring, RECURRING_HEADERS, 'recurring')});
   }
   if(action === 'track'){
@@ -3005,38 +3037,8 @@ function upsertRow(sheetName, payload, keyCol){
   const oldDeadline = isNew ? null : data[rowIdx-1][deadlineIdx];
   const oldEvdate = isNew ? null : data[rowIdx-1][evdateIdx];
 
-  const row = headers.map(function(h){
-    switch(h){
-      case 'ID': return payload.id;
-      case 'Title': return payload.title;
-      case 'Category': return payload.cat;
-      case 'Type': return payload.type;
-      case 'Department': return payload.dept;
-      case 'Owning Dept': return payload.ownerDept || '';
-      case 'Project': return payload.projectId || '';
-      case 'Requestor': return payload.name;
-      case 'Email': return payload.email;
-      case 'Phone': return payload.phone;
-      case 'Priority': return payload.priority;
-      case 'Status': return payload.status;
-      case 'Deadline': return payload.deadline;
-      case 'Event Date': return payload.evdate;
-      case 'Location': return payload.location;
-      case 'Deliverables': return payload.deliverables;
-      case 'Description': return payload.desc;
-      case 'Assigned To': return payload.assigned;
-      case 'Support Staff': return (payload.supportStaff||[]).join(', ');
-      case 'Submitted': return payload.date;
-      case 'Attachments': return (payload.atts||[]).map(function(a){return a.name;}).join(', ');
-      case 'Drive Link': return payload.driveLink || '';
-      case 'Delivered Files': return (payload.deliveryFiles||[]).map(function(a){return a.name;}).join(', ');
-      case 'Rating': return payload.rating || '';
-      case 'Trashed At': return payload.trashedAt;
-      case 'Last Updated': return new Date();
-      case 'Payload JSON': return JSON.stringify(payload);
-      default: return '';
-    }
-  });
+  const row = headers.map(function(h){ return valueForHeader(h, payload); });
+
 
   if(!isNew){ sheet.getRange(rowIdx,1,1,row.length).setValues([row]); }
   else { sheet.appendRow(row); rowIdx = sheet.getLastRow(); }
@@ -3157,16 +3159,55 @@ function syncWorkloadTab(staffList){
   replaceTabBody(TABS.workload, WORKLOAD_HEADERS, rows);
 }
 
+/** Recovers the payload from a row even if the header row and the data columns have
+ *  drifted out of alignment (which happens whenever the schema gains columns and
+ *  setupSheet rewrites row 1 over rows that were written under the old layout). */
+function extractPayload(row, preferredIdx){
+  const tryParse = function(v){
+    if(!v || typeof v !== 'string') return null;
+    const t = v.trim();
+    if(t.charAt(0) !== '{') return null;
+    try{ const o = JSON.parse(t); return (o && o.id) ? o : null; }catch(err){ return null; }
+  };
+  if(preferredIdx >= 0){
+    const hit = tryParse(row[preferredIdx]);
+    if(hit) return hit;
+  }
+  // Fall back to scanning the row from the right — the JSON blob is always last-ish.
+  for(let c = row.length - 1; c >= 0; c--){
+    const hit = tryParse(row[c]);
+    if(hit) return hit;
+  }
+  return null;
+}
+
 function readAllPayloads(){
   const sheet = getSheet(CONFIG.SHEET_NAME);
   const data = sheet.getDataRange().getValues();
+  if(data.length < 2) return [];
   const jsonIdx = data[0].indexOf('Payload JSON');
   const out = [];
   for(let i=1; i<data.length; i++){
-    if(!data[i][jsonIdx]) continue;
-    try{ out.push(JSON.parse(data[i][jsonIdx])); }catch(err){ /* skip */ }
+    const p = extractPayload(data[i], jsonIdx);
+    if(p) out.push(p);
   }
   return out;
+}
+
+/** Strips base64 file blobs from a payload for list responses. Keeping them made the
+ *  response megabytes wide, which is what was causing the 8-second sync timeouts. */
+function stripHeavy(r){
+  const copy = {};
+  for(const k in r){ if(r.hasOwnProperty(k)) copy[k] = r[k]; }
+  const slim = function(arr){
+    return (arr||[]).map(function(a){
+      return {name:a.name, size:a.size, mime:a.mime, at:a.at,
+              url: (a.url && a.url.indexOf('data:') === 0) ? '' : a.url};
+    });
+  };
+  if(copy.atts) copy.atts = slim(copy.atts);
+  if(copy.deliveryFiles) copy.deliveryFiles = slim(copy.deliveryFiles);
+  return copy;
 }
 
 /* ============================================================
@@ -3207,6 +3248,81 @@ function dailyBackup(){ runBackup('Daily auto-backup'); }
 function backupNowFromMenu(){
   const url = runBackup('Manual (menu)');
   SpreadsheetApp.getUi().alert('Backup complete.\n\nSaved to Drive:\n' + url);
+}
+
+/** Realigns a sheet whose rows were written under an older column layout.
+ *  Recovers each row's payload, then rewrites the entire sheet in the current
+ *  header order. Safe to run repeatedly; backs up first. */
+function repairSheet(){
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if(!sheet){ throw new Error('Requests sheet not found'); }
+
+  const data = sheet.getDataRange().getValues();
+  const oldJsonIdx = data.length ? data[0].indexOf('Payload JSON') : -1;
+  const payloads = [];
+  for(let i=1; i<data.length; i++){
+    const p = extractPayload(data[i], oldJsonIdx);
+    if(p) payloads.push(p);
+  }
+  if(!payloads.length){
+    SpreadsheetApp.getUi().alert('No recoverable request rows were found — nothing was changed.');
+    return 0;
+  }
+
+  // Snapshot before touching anything.
+  runBackup('Pre-repair backup');
+
+  sheet.clear();
+  sheet.appendRow(HEADERS);
+  sheet.getRange(1,1,1,HEADERS.length)
+    .setBackground(CONFIG.COLORS.obsidian).setFontColor(CONFIG.COLORS.gold)
+    .setFontWeight('bold').setFontFamily('Georgia').setFontSize(10)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+  sheet.setFrozenRows(1);
+
+  const rows = payloads.map(function(p){ return HEADERS.map(function(h){ return valueForHeader(h, p); }); });
+  sheet.getRange(2,1,rows.length,HEADERS.length).setValues(rows)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  payloads.forEach(function(p,i){ colorRow(sheet, i+2, p.status); });
+  SpreadsheetApp.flush();
+
+  SpreadsheetApp.getUi().alert('Repaired ' + payloads.length + ' request row(s) into the current column layout.\n\nA backup was saved to Drive first.');
+  return payloads.length;
+}
+
+/** Single source of truth for turning a payload into a cell value for a given header. */
+function valueForHeader(h, payload){
+  switch(h){
+    case 'ID': return payload.id;
+    case 'Title': return payload.title;
+    case 'Category': return payload.cat;
+    case 'Type': return payload.type;
+    case 'Department': return payload.dept;
+    case 'Owning Dept': return payload.ownerDept || '';
+    case 'Project': return payload.projectId || '';
+    case 'Requestor': return payload.name;
+    case 'Email': return payload.email;
+    case 'Phone': return payload.phone;
+    case 'Priority': return payload.priority;
+    case 'Status': return payload.status;
+    case 'Deadline': return payload.deadline;
+    case 'Event Date': return payload.evdate;
+    case 'Location': return payload.location;
+    case 'Deliverables': return payload.deliverables;
+    case 'Description': return payload.desc;
+    case 'Assigned To': return payload.assigned;
+    case 'Support Staff': return (payload.supportStaff||[]).join(', ');
+    case 'Submitted': return payload.date;
+    case 'Attachments': return (payload.atts||[]).map(function(a){return a.name;}).join(', ');
+    case 'Drive Link': return payload.driveLink || '';
+    case 'Delivered Files': return (payload.deliveryFiles||[]).map(function(a){return a.name;}).join(', ');
+    case 'Rating': return payload.rating || '';
+    case 'Trashed At': return payload.trashedAt;
+    case 'Last Updated': return new Date();
+    case 'Payload JSON': return JSON.stringify(payload);
+    default: return '';
+  }
 }
 
 /** Full mirror refresh — rebuilds every derived tab from live data. */
